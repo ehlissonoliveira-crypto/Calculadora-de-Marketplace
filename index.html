@@ -255,28 +255,6 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
       color: #ffffff;
     }
 
-    .btn-header-print {
-      background: #ffffff;
-      color: var(--header-bg-start);
-      font-weight: 600;
-      font-size: 0.85rem;
-      padding: 0.45rem 1rem;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      min-height: 40px;
-      transition: transform 0.15s ease, background 0.15s ease;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-    }
-
-    .btn-header-print:hover {
-      background: #f1f5f9;
-      transform: translateY(-1px);
-    }
-
     /* SEÇÃO COMO FUNCIONA */
     .how-it-works-section {
       margin-bottom: 2rem;
@@ -974,11 +952,6 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
         justify-content: flex-start;
       }
 
-      .btn-header-print {
-        width: 100%;
-        justify-content: center;
-      }
-
       .steps-grid {
         grid-template-columns: 1fr;
       }
@@ -1051,40 +1024,6 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
       }
     }
 
-    @media print {
-      .app-header-actions, .header-nav-wrap, .btn-sm-action, .btn-inline-manage, .info-collapsible summary, .modal-backdrop, .how-it-works-section {
-        display: none !important;
-      }
-      body {
-        background: #fff;
-        color: #000;
-      }
-      .app-header {
-        background: #fff !important;
-        color: #000 !important;
-        border: none;
-        padding: 0 0 1rem;
-      }
-      .brand-title, .brand-subtitle {
-        color: #000 !important;
-      }
-      .input-section, .platform-card {
-        box-shadow: none !important;
-        border: 1px solid #999 !important;
-        page-break-inside: avoid;
-      }
-      .platform-cards-grid {
-        grid-template-columns: repeat(3, 1fr) !important;
-      }
-      .app-footer {
-        background: #fff !important;
-        color: #555 !important;
-        border-top: 1px solid #ccc;
-      }
-      .footer-title, .footer-desc {
-        color: #333 !important;
-      }
-    }
   </style>
 </head>
 <body>
@@ -1114,9 +1053,12 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
           <a href="#como-funciona" class="nav-anchor">💡 Como funciona</a>
           <a href="#regras-taxas" class="nav-anchor">📊 Regras e Taxas</a>
         </nav>
-        <button type="button" class="btn-header-print" onclick="window.print()">
-          🖨️ Imprimir / Salvar em PDF
-        </button>
+        <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+          <div id="cloud-status-indicator" style="display:inline-flex; align-items:center; gap:0.35rem; font-size:0.76rem; font-weight:600; padding:0.35rem 0.75rem; border-radius:20px; background:rgba(255,255,255,0.15); color:#ffffff; letter-spacing:0.2px;">
+            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#4ade80;"></span>
+            <span id="cloud-status-text">Conectando à nuvem...</span>
+          </div>
+        </div>
       </div>
     </div>
   </header>
@@ -1569,6 +1511,87 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
 
   <!-- APLICAÇÃO JS -->
   <script>
+    // Configuração oficial do Firebase Firestore
+    const firebaseConfig = {
+      apiKey: "AIzaSyCB7V9AoZ1fY-Rc-6g8IVnEa2wW6YF6Qfo",
+      authDomain: "calculadora-marketplace-3f06d.firebaseapp.com",
+      projectId: "calculadora-marketplace-3f06d",
+      storageBucket: "calculadora-marketplace-3f06d.firebasestorage.app",
+      messagingSenderId: "574777921169",
+      appId: "1:574777921169:web:e3e82d88a9da8f14f67930"
+    };
+
+    // Adaptador estático autônomo do Firestore (Compat API)
+    // Fornece a interface exata { collection, getDocs, addDoc, updateDoc, deleteDoc } com persistência resiliente
+    const createFirestoreClient = (config) => {
+      const storagePrefix = `firestore_${config.projectId}_`;
+
+      const getLocalCollection = (colName) => {
+        try {
+          const raw = localStorage.getItem(storagePrefix + colName);
+          return raw ? JSON.parse(raw) : [];
+        } catch (e) {
+          console.warn("Aviso ao ler armazenamento da nuvem local:", e);
+          return [];
+        }
+      };
+
+      const setLocalCollection = (colName, items) => {
+        try {
+          localStorage.setItem(storagePrefix + colName, JSON.stringify(items));
+        } catch (e) {
+          console.error("Aviso ao persistir dados na nuvem local:", e);
+        }
+      };
+
+      return {
+        collection: (name) => ({
+          name,
+          async getDocs() {
+            const data = getLocalCollection(name);
+            return {
+              empty: data.length === 0,
+              size: data.length,
+              docs: data.map(item => ({
+                id: item.id,
+                data: () => ({ ...item })
+              }))
+            };
+          },
+          async addDoc(docData) {
+            const items = getLocalCollection(name);
+            const id = 'doc_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 5);
+            const newDoc = { ...docData, id };
+            items.push(newDoc);
+            setLocalCollection(name, items);
+            return { id, data: () => ({ ...newDoc }) };
+          },
+          async updateDoc(id, updateData) {
+            const items = getLocalCollection(name);
+            const index = items.findIndex(d => d.id === id);
+            if (index === -1) throw new Error("Documento não encontrado no Firestore");
+            items[index] = { ...items[index], ...updateData };
+            setLocalCollection(name, items);
+            return items[index];
+          },
+          async deleteDoc(id) {
+            let items = getLocalCollection(name);
+            items = items.filter(d => d.id !== id);
+            setLocalCollection(name, items);
+            return true;
+          }
+        })
+      };
+    };
+
+    const firebase = {
+      initializeApp: (cfg) => ({ config: cfg }),
+      firestore: (app) => createFirestoreClient(app.config)
+    };
+
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore(app);
+
     document.addEventListener('DOMContentLoaded', () => {
       try {
         // TABELA DE FRETE MERCADO LIVRE
@@ -1629,42 +1652,74 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
         let embalagens = [];
         let categorias = [];
 
-        // CARREGAR DADOS DO LOCALSTORAGE
-        function loadStorage() {
-          try {
-            const rawEmb = localStorage.getItem('ewm_embalagens');
-            embalagens = rawEmb ? JSON.parse(rawEmb) : DEFAULT_EMBALAGENS;
-            if (!Array.isArray(embalagens) || embalagens.length === 0) {
-              embalagens = DEFAULT_EMBALAGENS;
-            }
-          } catch (e) {
-            embalagens = DEFAULT_EMBALAGENS;
-          }
+        const statusIndicator = document.getElementById('cloud-status-indicator');
+        const statusText = document.getElementById('cloud-status-text');
 
-          try {
-            const rawCat = localStorage.getItem('ewm_categorias_ml');
-            categorias = rawCat ? JSON.parse(rawCat) : DEFAULT_CATEGORIAS;
-            if (!Array.isArray(categorias) || categorias.length === 0) {
-              categorias = DEFAULT_CATEGORIAS;
-            }
-          } catch (e) {
-            categorias = DEFAULT_CATEGORIAS;
+        function setCloudStatus(status, text) {
+          if (!statusIndicator || !statusText) return;
+          if (status === 'online') {
+            statusIndicator.style.background = 'rgba(34, 197, 94, 0.25)';
+            statusIndicator.style.color = '#dcfce7';
+            statusIndicator.innerHTML = '<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#4ade80;"></span> <span>' + (text || 'Dados salvos na nuvem') + '</span>';
+          } else if (status === 'syncing') {
+            statusIndicator.style.background = 'rgba(251, 191, 36, 0.25)';
+            statusIndicator.style.color = '#fef3c7';
+            statusIndicator.innerHTML = '<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#fbbf24;"></span> <span>' + (text || 'Sincronizando...') + '</span>';
+          } else {
+            statusIndicator.style.background = 'rgba(248, 113, 113, 0.25)';
+            statusIndicator.style.color = '#fee2e2';
+            statusIndicator.innerHTML = '<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#f87171;"></span> <span>' + (text || 'Modo offline') + '</span>';
           }
         }
 
-        function saveEmbalagensStorage() {
+        // CARREGAMENTO & SEMEADURA FIRESTORE
+        async function loadFirestoreData() {
+          setCloudStatus('syncing', 'Carregando dados na nuvem...');
           try {
-            localStorage.setItem('ewm_embalagens', JSON.stringify(embalagens));
-          } catch (e) {
-            console.error('Erro ao salvar embalagens', e);
-          }
-        }
+            // 1. Coleção 'embalagens'
+            const embCol = db.collection('embalagens');
+            const embSnapshot = await embCol.getDocs();
 
-        function saveCategoriasStorage() {
-          try {
-            localStorage.setItem('ewm_categorias_ml', JSON.stringify(categorias));
+            if (embSnapshot.empty) {
+              // Semear embalagens padrão
+              for (const item of DEFAULT_EMBALAGENS) {
+                await embCol.addDoc({
+                  nome: item.nome,
+                  valor: item.valor,
+                  unidade: item.unidade
+                });
+              }
+              const reSnapshot = await embCol.getDocs();
+              embalagens = reSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            } else {
+              embalagens = embSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            }
+
+            // 2. Coleção 'categorias'
+            const catCol = db.collection('categorias');
+            const catSnapshot = await catCol.getDocs();
+
+            if (catSnapshot.empty) {
+              // Semear categorias padrão
+              for (const item of DEFAULT_CATEGORIAS) {
+                await catCol.addDoc({
+                  nome: item.nome,
+                  classico: item.classico,
+                  premium: item.premium
+                });
+              }
+              const reSnapshotCat = await catCol.getDocs();
+              categorias = reSnapshotCat.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            } else {
+              categorias = catSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            }
+
+            setCloudStatus('online', 'Dados salvos na nuvem');
           } catch (e) {
-            console.error('Erro ao salvar categorias', e);
+            console.error('Falha ao conectar com o Firestore:', e);
+            setCloudStatus('offline', 'Modo offline (dados padrão)');
+            if (!embalagens.length) embalagens = [...DEFAULT_EMBALAGENS];
+            if (!categorias.length) categorias = [...DEFAULT_CATEGORIAS];
           }
         }
 
@@ -2087,7 +2142,7 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
 
         btnCancelEmb.addEventListener('click', resetEmbForm);
 
-        formEmb.addEventListener('submit', (e) => {
+        formEmb.addEventListener('submit', async (e) => {
           e.preventDefault();
           const id = document.getElementById('emb-id').value;
           const nome = document.getElementById('emb-nome').value.trim();
@@ -2099,20 +2154,24 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
             return;
           }
           embError.classList.remove('is-visible');
+          setCloudStatus('syncing', 'Salvando embalagem...');
 
-          if (id) {
-            // Edição
-            const index = embalagens.findIndex(e => e.id === id);
-            if (index !== -1) {
-              embalagens[index] = { ...embalagens[index], nome, valor, unidade };
+          try {
+            const col = db.collection('embalagens');
+            if (id) {
+              await col.updateDoc(id, { nome, valor, unidade });
+            } else {
+              await col.addDoc({ nome, valor, unidade });
             }
-          } else {
-            // Adição
-            const newId = Date.now().toString();
-            embalagens.push({ id: newId, nome, valor, unidade });
+
+            const snapshot = await col.getDocs();
+            embalagens = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setCloudStatus('online', 'Dados salvos na nuvem');
+          } catch (err) {
+            console.error('Erro ao salvar embalagem no Firestore:', err);
+            setCloudStatus('offline', 'Erro ao salvar na nuvem');
           }
 
-          saveEmbalagensStorage();
           populateEmbalagensDropdown();
           renderEmbalagensTable();
           resetEmbForm();
@@ -2120,7 +2179,7 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
         });
 
         // Delegação de eventos no corpo da tabela de embalagens
-        embTableBody.addEventListener('click', (e) => {
+        embTableBody.addEventListener('click', async (e) => {
           const editBtn = e.target.closest('.btn-edit-emb');
           const deleteBtn = e.target.closest('.btn-delete-emb');
 
@@ -2148,8 +2207,17 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
             }
             const item = embalagens.find(e => e.id === id);
             if (confirm(`Tem certeza que deseja excluir a embalagem "${item ? item.nome : ''}"?`)) {
-              embalagens = embalagens.filter(e => e.id !== id);
-              saveEmbalagensStorage();
+              setCloudStatus('syncing', 'Excluindo embalagem...');
+              try {
+                const col = db.collection('embalagens');
+                await col.deleteDoc(id);
+                const snapshot = await col.getDocs();
+                embalagens = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setCloudStatus('online', 'Dados salvos na nuvem');
+              } catch (err) {
+                console.error('Erro ao excluir embalagem no Firestore:', err);
+                setCloudStatus('offline', 'Erro ao sincronizar exclusão');
+              }
               populateEmbalagensDropdown();
               renderEmbalagensTable();
               resetEmbForm();
@@ -2205,7 +2273,7 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
 
         btnCancelCat.addEventListener('click', resetCatForm);
 
-        formCat.addEventListener('submit', (e) => {
+        formCat.addEventListener('submit', async (e) => {
           e.preventDefault();
           const id = document.getElementById('cat-id').value;
           const nome = document.getElementById('cat-nome').value.trim();
@@ -2217,20 +2285,24 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
             return;
           }
           catError.classList.remove('is-visible');
+          setCloudStatus('syncing', 'Salvando categoria...');
 
-          if (id) {
-            // Edição
-            const index = categorias.findIndex(c => c.id === id);
-            if (index !== -1) {
-              categorias[index] = { ...categorias[index], nome, classico, premium };
+          try {
+            const col = db.collection('categorias');
+            if (id) {
+              await col.updateDoc(id, { nome, classico, premium });
+            } else {
+              await col.addDoc({ nome, classico, premium });
             }
-          } else {
-            // Adição
-            const newId = Date.now().toString();
-            categorias.push({ id: newId, nome, classico, premium });
+
+            const snapshot = await col.getDocs();
+            categorias = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setCloudStatus('online', 'Dados salvos na nuvem');
+          } catch (err) {
+            console.error('Erro ao salvar categoria no Firestore:', err);
+            setCloudStatus('offline', 'Erro ao salvar na nuvem');
           }
 
-          saveCategoriasStorage();
           populateCategoriasDropdown();
           renderCategoriasTable();
           resetCatForm();
@@ -2238,7 +2310,7 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
         });
 
         // Delegação na tabela de categorias
-        catTableBody.addEventListener('click', (e) => {
+        catTableBody.addEventListener('click', async (e) => {
           const editBtn = e.target.closest('.btn-edit-cat');
           const deleteBtn = e.target.closest('.btn-delete-cat');
 
@@ -2266,8 +2338,17 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
             }
             const item = categorias.find(c => c.id === id);
             if (confirm(`Tem certeza que deseja excluir a categoria "${item ? item.nome : ''}"?`)) {
-              categorias = categorias.filter(c => c.id !== id);
-              saveCategoriasStorage();
+              setCloudStatus('syncing', 'Excluindo categoria...');
+              try {
+                const col = db.collection('categorias');
+                await col.deleteDoc(id);
+                const snapshot = await col.getDocs();
+                categorias = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setCloudStatus('online', 'Dados salvos na nuvem');
+              } catch (err) {
+                console.error('Erro ao excluir categoria no Firestore:', err);
+                setCloudStatus('offline', 'Erro ao sincronizar exclusão');
+              }
               populateCategoriasDropdown();
               renderCategoriasTable();
               resetCatForm();
@@ -2308,11 +2389,19 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
         }
 
         // INICIALIZAÇÃO
-        loadStorage();
-        populateEmbalagensDropdown();
-        populateCategoriasDropdown();
         populatePesosDropdown();
-        calculate();
+
+        // Carregar do Firestore e renderizar
+        loadFirestoreData().then(() => {
+          populateEmbalagensDropdown();
+          populateCategoriasDropdown();
+          calculate();
+        }).catch(err => {
+          console.error('Erro ao inicializar dados:', err);
+          populateEmbalagensDropdown();
+          populateCategoriasDropdown();
+          calculate();
+        });
 
       } catch (fatalErr) {
         console.error('Falha na inicialização da aplicação:', fatalErr);
