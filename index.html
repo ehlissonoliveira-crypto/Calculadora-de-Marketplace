@@ -1,0 +1,2470 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora de Precificação EWM Distribuidora</title>
+  
+  <!-- Google Fonts: Inter -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+
+  <!-- Basecoat CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@1.0.2/dist/basecoat.cdn.min.css">
+  
+  <!-- System Shell CSS -->
+  <style>
+/* Skip artifact shell — fixed styles served beside every artifact.
+   Complements basecoat; artifacts override --accent for their own identity. */
+:root {
+  color-scheme: light dark;
+  --accent: #2563eb;
+  --accent-contrast: #ffffff;
+  --accent-text: color-mix(in srgb, var(--accent) 72%, #000);
+  --bg: #f8f9fb;
+  --surface: #ffffff;
+  --text: #14171f;
+  --text-muted: #5b6472;
+  --border: rgba(20, 23, 31, 0.10);
+  --radius: 10px;
+  --shadow: 0 1px 3px rgba(20, 23, 31, 0.08);
+  --space: 16px;
+}
+/* Theme resolution. Without data-theme the viewer's system preference decides,
+   as it always did. With it, the artifact's own choice wins in BOTH directions:
+   a page that hardcodes one palette must not be handed the opposite set of
+   tokens by the machine it happens to be opened on. The dark values appear
+   twice because a media query cannot be folded into a selector list.
+   The attribute sits inside :where() so these blocks keep the specificity of a
+   bare :root — the page's own <style> is linked after this file and must go on
+   overriding any token it wants, exactly as it could before. */
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    --accent-text: color-mix(in srgb, var(--accent) 78%, #fff);
+    --bg: #101318;
+    --surface: #181c23;
+    --text: #eef1f6;
+    --text-muted: #9aa4b2;
+    --border: rgba(238, 241, 246, 0.12);
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+}
+:root:where([data-theme="dark"]) {
+  color-scheme: dark;
+  --accent-text: color-mix(in srgb, var(--accent) 78%, #fff);
+  --bg: #101318;
+  --surface: #181c23;
+  --text: #eef1f6;
+  --text-muted: #9aa4b2;
+  --border: rgba(238, 241, 246, 0.12);
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+:root:where([data-theme="light"]) { color-scheme: light; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+img { max-width: 100%; display: block; }
+
+.shell-container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+.shell-section { padding: calc(var(--space) * 2) 0; }
+.shell-grid { display: grid; gap: var(--space); grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.shell-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: var(--space); }
+.shell-footer { padding: 24px 0 40px; color: var(--text-muted); font-size: 13px; }
+
+.shell-hero { padding: calc(var(--space) * 3) 0 calc(var(--space) * 2); }
+.shell-hero h1 { font-size: clamp(26px, 4vw, 40px); line-height: 1.15; margin: 0 0 10px; text-wrap: balance; }
+.shell-hero p { color: var(--text-muted); max-width: 60ch; margin: 0; }
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: var(--space);
+}
+
+.kpi { display: flex; flex-direction: column; gap: 4px; }
+.kpi .kpi-value { font-size: 28px; font-weight: 650; line-height: 1.1; }
+.kpi .kpi-label { font-size: 13px; color: var(--text-muted); }
+.kpi .kpi-delta { font-size: 12.5px; font-weight: 600; }
+.kpi .kpi-delta.up { color: #0a8f3c; }
+.kpi .kpi-delta.down { color: #cf3131; }
+
+table.shell-table { border-collapse: collapse; width: 100%; font-size: 14px; }
+table.shell-table th {
+  text-align: left; font-size: 11.5px; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--text-muted); font-weight: 600;
+}
+table.shell-table th, table.shell-table td { padding: 9px 12px 9px 0; border-bottom: 1px solid var(--border); }
+table.shell-table td.num, table.shell-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+
+.chart-box { width: 100%; min-height: 220px; }
+.chart-box svg { width: 100%; height: auto; display: block; }
+
+.muted { color: var(--text-muted); }
+.accent { color: var(--accent-text); }
+.shell-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent-text);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .shell-fade { animation: shell-fade 400ms ease both; }
+  @keyframes shell-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+}
+
+</style>
+  
+  <!-- System Shell JS -->
+  
+
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      max-width: 100%;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    :root {
+      --accent: #1e4d8c;
+      --header-bg-start: #0f2a5c;
+      --header-bg-end: #1e4d8c;
+      --brand-green: #2e7d32;
+      --brand-green-light: #e8f5e9;
+      --brand-green-ring: #4caf50;
+      --bg-page: #f5f7fa;
+      --input-bg-focus: #fff8e1;
+      --card-radius: 14px;
+    }
+
+    body {
+      background-color: var(--bg-page);
+      color: #1e293b;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    /* HEADER PROFISSIONAL */
+    .app-header {
+      background: linear-gradient(135deg, var(--header-bg-start) 0%, var(--header-bg-end) 100%);
+      color: #ffffff;
+      padding: 1.25rem 0 1.5rem;
+      box-shadow: 0 4px 16px rgba(15, 42, 92, 0.15);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      margin-bottom: 2rem;
+    }
+
+    .app-header-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    .header-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .brand-block {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .brand-icon-box {
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.14);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+      flex-shrink: 0;
+    }
+
+    .brand-icon-box svg {
+      color: #ffffff;
+    }
+
+    .brand-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #ffffff;
+      margin: 0;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .brand-subtitle {
+      font-size: 0.86rem;
+      color: rgba(255, 255, 255, 0.82);
+      margin: 0.2rem 0 0;
+      font-weight: 400;
+    }
+
+    .header-nav-wrap {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .header-nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .nav-anchor {
+      color: rgba(255, 255, 255, 0.88);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      padding: 0.4rem 0.75rem;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      transition: all 0.2s ease;
+      min-height: 38px;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .nav-anchor:hover, .nav-anchor:focus-visible {
+      background: rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+    }
+
+    .btn-header-print {
+      background: #ffffff;
+      color: var(--header-bg-start);
+      font-weight: 600;
+      font-size: 0.85rem;
+      padding: 0.45rem 1rem;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      min-height: 40px;
+      transition: transform 0.15s ease, background 0.15s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    }
+
+    .btn-header-print:hover {
+      background: #f1f5f9;
+      transform: translateY(-1px);
+    }
+
+    /* SEÇÃO COMO FUNCIONA */
+    .how-it-works-section {
+      margin-bottom: 2rem;
+    }
+
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-top: 0.85rem;
+    }
+
+    .step-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 1rem 1.1rem;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      position: relative;
+    }
+
+    .step-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--header-bg-end);
+      color: #ffffff;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .step-card h4 {
+      margin: 0.4rem 0 0.2rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .step-card p {
+      margin: 0;
+      font-size: 0.82rem;
+      color: #64748b;
+      line-height: 1.4;
+    }
+
+    /* FORMULÁRIO DE ENTRADA */
+    .input-section {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: var(--card-radius);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 14px rgba(15, 42, 92, 0.05);
+    }
+
+    .section-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 0.75rem;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      width: 100%;
+    }
+
+    .form-group label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #475569;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      min-height: 24px;
+    }
+
+    .form-control-custom {
+      height: 44px;
+      min-height: 44px;
+      width: 100%;
+      padding: 0.55rem 0.75rem;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      background: #fafafa;
+      color: #0f172a;
+      transition: all 0.2s ease;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    select.form-control-custom {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
+      background-position: right 0.6rem center;
+      background-repeat: no-repeat;
+      background-size: 1.3em 1.3em;
+      padding-right: 2.2rem;
+    }
+
+    .form-control-custom:focus {
+      outline: none;
+      border-color: #1e4d8c;
+      background-color: var(--input-bg-focus);
+      box-shadow: 0 0 0 3px rgba(30, 77, 140, 0.15);
+    }
+
+    .input-addon-group {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      width: 100%;
+    }
+
+    .btn-sm-action {
+      padding: 0 0.75rem;
+      min-height: 44px;
+      height: 44px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border-radius: 8px;
+      border: 1.5px solid #cbd5e1;
+      background: #ffffff;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #334155;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+      touch-action: manipulation;
+    }
+
+    .btn-sm-action:hover, .btn-sm-action:focus-visible {
+      background: #eff6ff;
+      border-color: #1e4d8c;
+      color: #1e4d8c;
+    }
+
+    .btn-inline-manage {
+      min-height: 28px !important;
+      height: 28px !important;
+      font-size: 0.74rem !important;
+      padding: 0 0.55rem !important;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      color: #1e4d8c;
+      font-weight: 600;
+    }
+
+    .btn-inline-manage:hover {
+      background: #dbeafe;
+      border-color: #93c5fd;
+    }
+
+    /* CARDS DE PLATAFORMA COM RESPONSIVIDADE TOTAL */
+    .platform-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+      align-items: stretch;
+    }
+
+    .platform-card {
+      background: #ffffff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: var(--card-radius);
+      padding: 1.4rem;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      overflow: hidden;
+    }
+
+    .platform-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    /* CARD MELHOR PREÇO COM DESTAQUE EM VERDE / ANEL */
+    .platform-card.best-price {
+      border: 2px solid var(--brand-green);
+      box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.18), 0 12px 28px rgba(46, 125, 50, 0.12);
+      background: linear-gradient(180deg, #ffffff 0%, #f4fbf6 100%);
+    }
+
+    .platform-card.best-price::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--brand-green);
+    }
+
+    .card-header-plat {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+      padding-bottom: 0.85rem;
+      border-bottom: 1px solid #e2e8f0;
+      gap: 0.5rem;
+    }
+
+    .plat-title-box {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .plat-title-box h3 {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .plat-title-box .badge-plat {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 12px;
+      display: inline-block;
+      width: fit-content;
+    }
+
+    .badge-tt { background: #000; color: #fff; }
+    .badge-shopee { background: #ee4d2d; color: #fff; }
+    .badge-ml { background: #ffe600; color: #1e293b; font-weight: 700; }
+
+    .best-badge {
+      background: var(--brand-green);
+      color: #ffffff;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 5px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 6px rgba(46, 125, 50, 0.35);
+      animation: pulseBadge 2s infinite ease-in-out;
+    }
+
+    @keyframes pulseBadge {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.04); }
+    }
+
+    .price-display-box {
+      background: #f8fafc;
+      border: 1.5px dashed #cbd5e1;
+      border-radius: 10px;
+      padding: 1.15rem 0.75rem;
+      text-align: center;
+      margin-bottom: 1.15rem;
+      transition: all 0.2s ease;
+    }
+
+    .platform-card.best-price .price-display-box {
+      background: var(--brand-green-light);
+      border-color: #81c784;
+    }
+
+    .price-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #64748b;
+      letter-spacing: 0.6px;
+    }
+
+    .price-val {
+      font-size: 2.1rem;
+      font-weight: 800;
+      color: #1b5e20;
+      line-height: 1.15;
+      margin: 0.35rem 0;
+      letter-spacing: -0.02em;
+    }
+
+    .faixa-info {
+      font-size: 0.78rem;
+      color: #64748b;
+      line-height: 1.35;
+      min-height: 2.2em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      word-break: break-word;
+    }
+
+    .breakdown-list {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 1.25rem;
+      font-size: 0.86rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .breakdown-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #475569;
+      padding-bottom: 0.35rem;
+      border-bottom: 1px dotted #cbd5e1;
+      gap: 0.5rem;
+    }
+
+    .breakdown-item strong {
+      color: #0f172a;
+      font-weight: 600;
+      text-align: right;
+    }
+
+    .breakdown-item.highlight-total {
+      border-bottom: 1.5px solid #cbd5e1;
+      padding-top: 0.35rem;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .breakdown-item.highlight-total strong {
+      color: #0f2a5c;
+      font-size: 0.95rem;
+    }
+
+    .profit-summary {
+      margin-top: auto;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .profit-item {
+      text-align: center;
+      flex: 1;
+    }
+
+    .profit-item:first-child {
+      border-right: 1px solid #e2e8f0;
+    }
+
+    .profit-title {
+      font-size: 0.72rem;
+      color: #64748b;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .profit-val {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--brand-green);
+      margin-top: 3px;
+    }
+
+    /* INFORMAÇÕES EXPLICATIVAS (ACCORDION / REGRAS) */
+    .info-collapsible {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: var(--card-radius);
+      margin-bottom: 2.5rem;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+      overflow: hidden;
+    }
+
+    .info-collapsible summary {
+      padding: 1.15rem 1.4rem;
+      font-weight: 700;
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+      background: #f8fafc;
+      transition: background 0.15s ease;
+      min-height: 48px;
+    }
+
+    .info-collapsible summary:hover {
+      background: #f1f5f9;
+    }
+
+    .info-content {
+      padding: 1.5rem;
+      border-top: 1px solid #e2e8f0;
+      font-size: 0.88rem;
+      line-height: 1.6;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .rule-box {
+      background: #f8fafc;
+      padding: 1.15rem;
+      border-radius: 10px;
+      border-left: 4px solid var(--header-bg-end);
+      border-top: 1px solid #e2e8f0;
+      border-right: 1px solid #e2e8f0;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .rule-box h4 {
+      margin: 0 0 0.6rem;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--header-bg-end);
+    }
+
+    .rule-box ul {
+      margin: 0;
+      padding-left: 1.25rem;
+      word-break: break-word;
+    }
+
+    .rule-box li {
+      margin-bottom: 0.45rem;
+    }
+
+    /* MODAIS COM RESPONSIVIDADE TOTAL (MÁX 95VW NO CELULAR E ROLAGEM INTERNA) */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(2px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 0.75rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .modal-backdrop.is-open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-dialog {
+      background: #ffffff;
+      border-radius: 14px;
+      width: 100%;
+      max-width: 600px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 24px 38px rgba(0, 0, 0, 0.22);
+      transform: translateY(20px) scale(0.98);
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden;
+    }
+
+    .modal-backdrop.is-open .modal-dialog {
+      transform: translateY(0) scale(1);
+    }
+
+    .modal-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8fafc;
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .modal-close-btn {
+      background: #e2e8f0;
+      border: none;
+      font-size: 1.35rem;
+      cursor: pointer;
+      color: #334155;
+      line-height: 1;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+
+    .modal-close-btn:hover {
+      background: #cbd5e1;
+      color: #0f172a;
+    }
+
+    .modal-body {
+      padding: 1.2rem;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      flex: 1;
+    }
+
+    .modal-form-inline {
+      background: #f8fafc;
+      padding: 1rem;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+      margin-bottom: 1.2rem;
+    }
+
+    .modal-form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .table-responsive-wrap {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .item-list-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+
+    .item-list-table th, .item-list-table td {
+      padding: 0.7rem 0.65rem;
+      border-bottom: 1px solid #e2e8f0;
+      text-align: left;
+    }
+
+    .item-list-table th {
+      background: #f1f5f9;
+      font-weight: 700;
+      color: #475569;
+    }
+
+    .btn-action-icon {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.78rem;
+      margin-right: 4px;
+      color: #334155;
+      min-height: 34px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-action-icon:hover {
+      background: #eff6ff;
+      border-color: #1e4d8c;
+      color: #1e4d8c;
+    }
+
+    .btn-action-icon.btn-danger:hover {
+      border-color: #ef4444;
+      color: #dc2626;
+      background: #fef2f2;
+    }
+
+    .form-error {
+      color: #dc2626;
+      font-size: 0.78rem;
+      margin-top: 0.35rem;
+      display: none;
+      font-weight: 500;
+    }
+
+    .form-error.is-visible {
+      display: block;
+    }
+
+    /* RODAPÉ PROFISSIONAL */
+    .app-footer {
+      background: #0b1e42;
+      color: rgba(255, 255, 255, 0.85);
+      padding: 2.5rem 0 2rem;
+      margin-top: 3rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .app-footer-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 0.6rem;
+    }
+
+    .footer-title {
+      font-weight: 700;
+      font-size: 1rem;
+      color: #ffffff;
+    }
+
+    .footer-desc {
+      font-size: 0.82rem;
+      color: rgba(255, 255, 255, 0.65);
+      max-width: 650px;
+      line-height: 1.45;
+      margin: 0;
+    }
+
+    .footer-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.74rem;
+      color: rgba(255, 255, 255, 0.8);
+      margin-top: 0.5rem;
+    }
+
+    /* =========================================
+       MEDIA QUERIES PARA CELULAR (< 768px e 360px)
+       ========================================= */
+    @media (max-width: 768px) {
+      .app-header {
+        padding: 1rem 0 1.25rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .header-top-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .brand-title {
+        font-size: 1.35rem;
+      }
+
+      .header-nav-wrap {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .header-nav-links {
+        justify-content: flex-start;
+      }
+
+      .btn-header-print {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .steps-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .input-section {
+        padding: 1.15rem 0.95rem;
+        border-radius: 12px;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr !important;
+      }
+
+      .form-group[style*="grid-column: span 2"] {
+        grid-column: span 1 !important;
+      }
+
+      .platform-cards-grid {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+      }
+
+      .platform-card {
+        padding: 1.15rem;
+      }
+
+      .price-val {
+        font-size: 1.9rem;
+      }
+
+      .modal-dialog {
+        max-width: 95vw;
+        max-height: 92vh;
+        border-radius: 12px;
+      }
+
+      .modal-form-grid {
+        grid-template-columns: 1fr !important;
+      }
+
+      .modal-form-grid div[style*="grid-column: span 2"] {
+        grid-column: span 1 !important;
+      }
+
+      .info-content {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+      }
+
+      .info-collapsible summary {
+        padding: 1rem;
+        font-size: 0.92rem;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .brand-title {
+        font-size: 1.2rem;
+      }
+      .brand-icon-box {
+        width: 38px;
+        height: 38px;
+      }
+      .price-val {
+        font-size: 1.7rem;
+      }
+      .btn-sm-action {
+        padding: 0 0.5rem;
+        font-size: 0.75rem;
+      }
+    }
+
+    @media print {
+      .app-header-actions, .header-nav-wrap, .btn-sm-action, .btn-inline-manage, .info-collapsible summary, .modal-backdrop, .how-it-works-section {
+        display: none !important;
+      }
+      body {
+        background: #fff;
+        color: #000;
+      }
+      .app-header {
+        background: #fff !important;
+        color: #000 !important;
+        border: none;
+        padding: 0 0 1rem;
+      }
+      .brand-title, .brand-subtitle {
+        color: #000 !important;
+      }
+      .input-section, .platform-card {
+        box-shadow: none !important;
+        border: 1px solid #999 !important;
+        page-break-inside: avoid;
+      }
+      .platform-cards-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+      }
+      .app-footer {
+        background: #fff !important;
+        color: #555 !important;
+        border-top: 1px solid #ccc;
+      }
+      .footer-title, .footer-desc {
+        color: #333 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER COM CARA DE SITE -->
+  <header class="app-header">
+    <div class="shell-container app-header-inner">
+      <div class="header-top-row">
+        <div class="brand-block">
+          <div class="brand-icon-box" aria-hidden="true">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+          </div>
+          <div>
+            <h1 class="brand-title">EWM Distribuidora</h1>
+            <p class="brand-subtitle">Simulador de Precificação Estratégica &amp; Rentabilidade</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-nav-wrap">
+        <nav class="header-nav-links" aria-label="Navegação rápida">
+          <a href="#calculadora" class="nav-anchor">⚡ Calculadora</a>
+          <a href="#como-funciona" class="nav-anchor">💡 Como funciona</a>
+          <a href="#regras-taxas" class="nav-anchor">📊 Regras e Taxas</a>
+        </nav>
+        <button type="button" class="btn-header-print" onclick="window.print()">
+          🖨️ Imprimir / Salvar em PDF
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell-container">
+
+    <!-- SEÇÃO: COMO FUNCIONA -->
+    <section class="how-it-works-section" id="como-funciona">
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-badge">1</div>
+          <h4>Custos &amp; Insumos</h4>
+          <p>Preencha custo de compra, insumos de embalagem, etiqueta e impostos da sua operação.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-badge">2</div>
+          <h4>Margem &amp; Regras</h4>
+          <p>Defina a margem líquida desejada e a comissão de representante para cálculo reverso exato.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-badge">3</div>
+          <h4>Preço &amp; Comparação</h4>
+          <p>Veja os preços finais exatos calculados para cada plataforma e o badge de melhor oferta.</p>
+        </div>
+      </div>
+    </section>
+    
+    <!-- ENTRADA DE CUSTOS E PARÂMETROS -->
+    <section class="input-section" id="calculadora">
+      <div class="section-title">
+        <span>⚙️ Parâmetros de Custo e Venda</span>
+        <span style="font-size:0.75rem; font-weight:600; color:#16a34a; background:#e8f5e9; padding:4px 8px; border-radius:12px;">● Atualização em tempo real</span>
+      </div>
+
+      <form id="pricing-form" onsubmit="event.preventDefault();">
+        <div class="form-grid">
+          <!-- Custo do Produto -->
+          <div class="form-group">
+            <label for="custo-produto">Custo do Produto (R$)</label>
+            <input type="number" id="custo-produto" class="form-control-custom" step="0.01" min="0" value="30.00" required>
+          </div>
+
+          <!-- Etiqueta -->
+          <div class="form-group">
+            <label for="custo-etiqueta">Etiqueta (R$)</label>
+            <input type="number" id="custo-etiqueta" class="form-control-custom" step="0.01" min="0" value="0.03" required>
+          </div>
+
+          <!-- Tipo de Embalagem -->
+          <div class="form-group" style="grid-column: span 2;">
+            <label>
+              <span>Embalagem</span>
+              <button type="button" class="btn-inline-manage" id="btn-open-modal-embalagens">⚙️ Gerenciar</button>
+            </label>
+            <div class="input-addon-group">
+              <select id="select-embalagem" class="form-control-custom" style="width: 65%;">
+                <!-- Carregado via JS -->
+              </select>
+              <input type="number" id="qtde-embalagem" class="form-control-custom" style="width: 35%;" min="0.01" step="0.01" value="1" title="Quantidade (para metros use a metragem; para unidades use 1)">
+            </div>
+          </div>
+
+          <!-- Imposto -->
+          <div class="form-group">
+            <label for="aliquota-imposto">Imposto (%)</label>
+            <input type="number" id="aliquota-imposto" class="form-control-custom" step="0.1" min="0" max="90" value="12">
+          </div>
+
+          <!-- Comissão Representante -->
+          <div class="form-group">
+            <label for="comissao-representante">Comissão Rep. (%)</label>
+            <input type="number" id="comissao-representante" class="form-control-custom" step="0.1" min="0" max="90" value="5">
+          </div>
+
+          <!-- Margem Desejada -->
+          <div class="form-group">
+            <label for="margem-lucro">Margem Desejada (%)</label>
+            <input type="number" id="margem-lucro" class="form-control-custom" step="0.1" min="1" max="90" value="15">
+          </div>
+        </div>
+
+        <!-- Parâmetros Exclusivos Mercado Livre -->
+        <div style="margin-top: 1.5rem; padding-top: 1.2rem; border-top: 1.5px dashed #cbd5e1;">
+          <div style="font-size:0.88rem; font-weight:700; color:#0f172a; margin-bottom: 0.85rem; display: flex; align-items:center; gap:0.5rem;">
+            <span>📦 Configurações Mercado Livre</span>
+            <span style="font-size:0.7rem; background:#fef3c7; color:#92400e; padding:3px 8px; border-radius:6px; font-weight:700;">Exclusivo ML</span>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="ml-tipo-anuncio">Tipo de Anúncio</label>
+              <select id="ml-tipo-anuncio" class="form-control-custom">
+                <option value="classico" selected>Clássico</option>
+                <option value="premium">Premium</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="grid-column: span 2;">
+              <label>
+                <span>Categoria ML</span>
+                <button type="button" class="btn-inline-manage" id="btn-open-modal-categorias">⚙️ Gerenciar</button>
+              </label>
+              <select id="select-ml-categoria" class="form-control-custom">
+                <!-- Carregado via JS -->
+              </select>
+            </div>
+
+            <div class="form-group" style="grid-column: span 2;">
+              <label for="select-ml-peso">Faixa de Peso do Pacote</label>
+              <select id="select-ml-peso" class="form-control-custom">
+                <!-- 30 faixas carregadas via JS -->
+              </select>
+            </div>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <!-- CARDS DE RESULTADO: 3 PLATAFORMAS -->
+    <section class="platform-cards-grid" id="cards-container">
+      <!-- TikTok Shop Card -->
+      <article class="platform-card" id="card-tiktok">
+        <div class="card-header-plat">
+          <div class="plat-title-box">
+            <h3>🎵 TikTok Shop</h3>
+            <span class="badge-plat badge-tt">TikTok Shop</span>
+          </div>
+          <span class="best-badge" id="badge-best-tiktok" style="display:none;">🏆 Melhor Preço</span>
+        </div>
+
+        <div class="price-display-box">
+          <div class="price-label">Preço Sugerido Final</div>
+          <div class="price-val" id="tt-preco">R$ 0,00</div>
+          <div class="faixa-info" id="tt-faixa">Calculando faixa...</div>
+        </div>
+
+        <ul class="breakdown-list">
+          <li class="breakdown-item">
+            <span>Imposto:</span>
+            <strong id="tt-imposto">R$ 0,00</strong>
+          </li>
+          <li class="breakdown-item">
+            <span>Comissão Representante:</span>
+            <strong id="tt-comissao-rep">R$ 0,00</strong>
+          </li>
+          <li class="breakdown-item">
+            <span>Comissão TikTok:</span>
+            <strong id="tt-comissao-plat">R$ 0,00</strong>
+          </li>
+          <li class="breakdown-item">
+            <span>Taxa Fixa:</span>
+            <strong id="tt-taxa-fixa">R$ 0,00</strong>
+          </li>
+          <li class="breakdown-item">
+            <span>Frete Grátis (6%):</span>
+            <strong id="tt-frete">R$ 0,00</strong>
+          </li>
+          <li class="breakdown-item highlight-total">
+            <span>Total de Taxas:</span>
+            <strong id="tt-total-taxas">R$ 0,00</strong>
+          </li>
+        </ul>
+
+        <div class="profit-summary">
+          <div class="profit-item">
+            <div class="profit-title">Lucro Líquido</div>
+            <div class="profit-val" id="tt-lucro-liquido">R$ 0,00</div>
+          </div>
+          <div class="profit-item">
+            <div class="profit-title">Margem Real</div>
+            <div class="profit-val" id="tt-margem-real">0,0%</div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Shopee Card -->
+      <article class="platform-card" id="card-shopee">
+        <div class="card-header-plat">
+          <div class="plat-title-box">
+            <h3>🛍️ Shopee</h3>
+            <span class="badge-plat badge-shopee">Shopee CNPJ</span>
+          </div>
+          <span class="best-badge" id="badge-best-shopee" style="display:none;">🏆 Melhor Preço</span>
+        </div>
+
+        <div class="price-display-box">
+          <div class="price-label">Preço Sugerido Final</div>
+          <div class="price-val" id="shopee-preco">R$ 0,00</div>
+          <div class="faixa-info" id="shopee-faixa">Calculando faixa...</div>
+        </div>
+
+        <ul class="breakdown-list">
+          <li class="breakdown-item">
+            <span>Imposto:</span>
+            <strong id="shopee-imposto">R$ 0,00</strong>
+          </li>
+          <li class="breakdown-item">
+            <span>Comissão Representante:</span>
+            <strong id="shopee-comissao-rep">R$ 0,00</strong>
+          </li>
+          <li class="breakdown-item">
+            <span>Comissão Shopee:</span>
+            <strong id="shopee-comissao-plat">R$ 0,00</strong>
+          </li>
+          <li class="breakdown-item">
+            <span>Taxa Fixa:</span>
+            <strong id="shopee-taxa-fixa">R$ 0,00</strong>
+          </li>
+          <li class="breakdown-item">
+            <span>Frete (incluso na taxa):</span>
+            <strong id="shopee-frete">R$ 0,00</strong>
+          </li>
+          <li class="breakdown-item highlight-total">
+            <span>Total de Taxas:</span>
+            <strong id="shopee-total-taxas">R$ 0,00</strong>
+          </li>
+        </ul>
+
+        <div class="profit-summary">
+          <div class="profit-item">
+            <div class="profit-title">Lucro Líquido</div>
+            <div class="profit-val" id="shopee-lucro-liquido">R$ 0,00</div>
+          </div>
+          <div class="profit-item">
+            <div class="profit-title">Margem Real</div>
+            <div class="profit-val" id="shopee-margem-real">0,0%</div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Mercado Livre Card -->
+      <article class="platform-card" id="card-mercadolivre">
+        <div class="card-header-plat">
+          <div class="plat-title-box">
+            <h3>💛 Mercado Livre</h3>
+            <span class="badge-plat badge-ml">Mercado Envios</span>
+          </div>
+          <span class="best-badge" id="badge-best-mercadolivre" style="display:none;">🏆 Melhor Preço</span>
+        </div>
+
+        <div class="price-display-box">
+          <div class="price-label">Preço Sugerido Final</div>
+          <div class="price-val" id="ml-preco">R$ 0,00</div>
+          <div class="faixa-info" id="ml-faixa">Calculando categoria...</div>
+        </div>
+
+        <ul class="breakdown-list">
+          <li class="breakdown-item">
+            <span>Imposto:</span>
+            <strong id="ml-imposto">R$ 0,00</strong>
+          </li>
+          <li class="breakdown-item">
+            <span>Comissão Representante:</span>
+            <strong id="ml-comissao-rep">R$ 0,00</strong>
+          </li>
+          <li class="breakdown-item">
+            <span>Comissão Mercado Livre:</span>
+            <strong id="ml-comissao-plat">R$ 0,00</strong>
+          </li>
+          <li class="breakdown-item">
+            <span>Taxa Fixa:</span>
+            <strong id="ml-taxa-fixa">R$ 0,00</strong>
+          </li>
+          <li class="breakdown-item">
+            <span>Frete Mercado Envios:</span>
+            <strong id="ml-frete">R$ 0,00</strong>
+          </li>
+          <li class="breakdown-item highlight-total">
+            <span>Total de Taxas:</span>
+            <strong id="ml-total-taxas">R$ 0,00</strong>
+          </li>
+        </ul>
+
+        <div class="profit-summary">
+          <div class="profit-item">
+            <div class="profit-title">Lucro Líquido</div>
+            <div class="profit-val" id="ml-lucro-liquido">R$ 0,00</div>
+          </div>
+          <div class="profit-item">
+            <div class="profit-title">Margem Real</div>
+            <div class="profit-val" id="ml-margem-real">0,0%</div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- INFORMAÇÕES EXPLICATIVAS DE REGRAS E TAXAS -->
+    <details class="info-collapsible" id="regras-taxas">
+      <summary>
+        <span>📘 Detalhes e Regras Oficiais de Precificação por Plataforma</span>
+        <span style="font-size: 0.82rem; color:#1e4d8c; font-weight: 600;">▼ Ver detalhes</span>
+      </summary>
+      <div class="info-content">
+        <div class="rule-box">
+          <h4>TikTok Shop</h4>
+          <ul>
+            <li><strong>Abaixo de R$ 50,00:</strong> 10% comissão + R$ 4,00 taxa fixa.</li>
+            <li><strong>A partir de R$ 50,00:</strong> 6% comissão + R$ 6,00 taxa fixa.</li>
+            <li><strong>Frete Grátis:</strong> 6% do valor de venda (limitado ao teto de R$ 50,00 por item).</li>
+            <li>Sem intermediação ou taxas adicionais externas.</li>
+          </ul>
+        </div>
+
+        <div class="rule-box">
+          <h4>Shopee (Tabela CNPJ vigente 01/03/2026)</h4>
+          <ul>
+            <li><strong>Até R$ 79,99:</strong> 20% comissão + R$ 4,50 taxa fixa.</li>
+            <li><strong>R$ 80,00 a R$ 99,99:</strong> 14% comissão + R$ 16,00 taxa fixa.</li>
+            <li><strong>R$ 100,00 a R$ 199,99:</strong> 14% comissão + R$ 20,00 taxa fixa.</li>
+            <li><strong>Acima de R$ 200,00:</strong> 14% comissão + R$ 26,00 taxa fixa.</li>
+          </ul>
+        </div>
+
+        <div class="rule-box">
+          <h4>Mercado Livre</h4>
+          <ul>
+            <li><strong>Comissão:</strong> percentual conforme Categoria e Tipo (Clássico ou Premium). Sem taxa fixa.</li>
+            <li><strong>Frete:</strong> Tabela oficial Mercado Envios calculada cruzando a Faixa de Peso com a Faixa de Preço do produto.</li>
+            <li><strong>Preço Exato:</strong> valor final calculado diretamente pela fórmula de recomposição para garantir a margem líquida configurada.</li>
+          </ul>
+        </div>
+      </div>
+    </details>
+
+  </main>
+
+  <!-- RODAPÉ PROFISSIONAL -->
+  <footer class="app-footer">
+    <div class="shell-container app-footer-inner">
+      <div class="footer-title">EWM Distribuidora • Sistema Interno de Precificação e Rentabilidade</div>
+      <p class="footer-desc">
+        Os valores simulados e sugestões de preço final consideram as tabelas e regras vigentes de comissões, taxas fixas e frete de cada marketplace. Alterações tarifárias pelas plataformas refletirão no resultado.
+      </p>
+      <div class="footer-badge">
+        <span>🔒 Plataforma Operacional Interna</span>
+        <span>•</span>
+        <span>Cálculo de Preço Exato</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- MODAL: GERENCIADOR DE EMBALAGENS (RESPONSIVO COM ROLAGEM) -->
+  <div class="modal-backdrop" id="modal-embalagens" role="dialog" aria-modal="true" aria-labelledby="modal-emb-heading">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modal-emb-heading">Gerenciar Embalagens</h3>
+        <button type="button" class="modal-close-btn" data-close="modal-embalagens" aria-label="Fechar modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-form-inline">
+          <div style="font-weight:700; font-size:0.88rem; margin-bottom:0.6rem; color:#0f172a;" id="emb-form-title">Adicionar Nova Embalagem</div>
+          <form id="form-embalagem" onsubmit="event.preventDefault();">
+            <input type="hidden" id="emb-id">
+            <div class="modal-form-grid">
+              <div>
+                <label style="font-size:0.75rem; font-weight:600; color:#475569;">Nome</label>
+                <input type="text" id="emb-nome" class="form-control-custom" placeholder="Ex: Caixa P" style="width:100%;" required>
+              </div>
+              <div>
+                <label style="font-size:0.75rem; font-weight:600; color:#475569;">Valor (R$)</label>
+                <input type="number" id="emb-valor" class="form-control-custom" step="0.01" min="0.01" placeholder="0,00" style="width:100%;" required>
+              </div>
+              <div>
+                <label style="font-size:0.75rem; font-weight:600; color:#475569;">Unidade</label>
+                <select id="emb-unidade" class="form-control-custom" style="width:100%;">
+                  <option value="unidade">unidade</option>
+                  <option value="metro">metro</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-error" id="emb-error">Por favor, preencha o nome e um valor maior que zero.</div>
+            <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:0.85rem; flex-wrap:wrap;">
+              <button type="button" class="btn-sm-action" id="btn-cancel-emb" style="display:none;">Cancelar</button>
+              <button type="submit" class="btn-sm-action" style="background:#1e4d8c; color:#ffffff; border-color:#1e4d8c;" id="btn-save-emb">Salvar Embalagem</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="table-responsive-wrap">
+          <table class="item-list-table">
+            <thead>
+              <tr>
+                <th>Embalagem</th>
+                <th>Valor (R$)</th>
+                <th>Unidade</th>
+                <th style="text-align:right;">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="emb-table-body">
+              <!-- Inserido dinamicamente -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: GERENCIADOR DE CATEGORIAS ML (RESPONSIVO COM ROLAGEM) -->
+  <div class="modal-backdrop" id="modal-categorias" role="dialog" aria-modal="true" aria-labelledby="modal-cat-heading">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modal-cat-heading">Gerenciar Categorias Mercado Livre</h3>
+        <button type="button" class="modal-close-btn" data-close="modal-categorias" aria-label="Fechar modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-form-inline">
+          <div style="font-weight:700; font-size:0.88rem; margin-bottom:0.6rem; color:#0f172a;" id="cat-form-title">Adicionar Nova Categoria</div>
+          <form id="form-categoria" onsubmit="event.preventDefault();">
+            <input type="hidden" id="cat-id">
+            <div class="modal-form-grid">
+              <div style="grid-column: span 2;">
+                <label style="font-size:0.75rem; font-weight:600; color:#475569;">Nome da Categoria</label>
+                <input type="text" id="cat-nome" class="form-control-custom" placeholder="Ex: Ferramentas" style="width:100%;" required>
+              </div>
+              <div>
+                <label style="font-size:0.75rem; font-weight:600; color:#475569;">Clássico (%)</label>
+                <input type="number" id="cat-classico" class="form-control-custom" step="0.05" min="0" max="100" placeholder="12" style="width:100%;" required>
+              </div>
+              <div>
+                <label style="font-size:0.75rem; font-weight:600; color:#475569;">Premium (%)</label>
+                <input type="number" id="cat-premium" class="form-control-custom" step="0.05" min="0" max="100" placeholder="17" style="width:100%;" required>
+              </div>
+            </div>
+            <div class="form-error" id="cat-error">Preencha o nome e valores válidos entre 0% e 100%.</div>
+            <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:0.85rem; flex-wrap:wrap;">
+              <button type="button" class="btn-sm-action" id="btn-cancel-cat" style="display:none;">Cancelar</button>
+              <button type="submit" class="btn-sm-action" style="background:#1e4d8c; color:#ffffff; border-color:#1e4d8c;" id="btn-save-cat">Salvar Categoria</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="table-responsive-wrap">
+          <table class="item-list-table">
+            <thead>
+              <tr>
+                <th>Categoria</th>
+                <th>Clássico</th>
+                <th>Premium</th>
+                <th style="text-align:right;">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="cat-table-body">
+              <!-- Inserido dinamicamente -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- APLICAÇÃO JS -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      try {
+        // TABELA DE FRETE MERCADO LIVRE
+        // Colunas de preço: 0: até 18.99 | 1: 19-48.99 | 2: 49-78.99 | 3: 79-99.99 | 4: 100-119.99 | 5: 120-149.99 | 6: 150-199.99 | 7: 200+
+        const ML_FRETE_RATES = {
+          "Até 0,3 kg": [8.07, 9.79, 11.64, 25.90, 29.90, 33.90, 38.10, 43.30],
+          "De 0,3 a 0,5 kg": [8.50, 9.93, 11.79, 27.70, 32.30, 36.30, 40.90, 46.50],
+          "De 0,5 a 1 kg": [8.64, 10.21, 12.07, 28.90, 33.70, 38.10, 42.70, 48.90],
+          "De 1 a 1,5 kg": [8.79, 10.50, 12.36, 29.50, 34.30, 38.90, 43.50, 50.90],
+          "De 1,5 a 2 kg": [8.93, 10.64, 12.50, 30.10, 35.30, 39.70, 44.50, 51.10],
+          "De 2 a 3 kg": [9.07, 12.36, 13.07, 32.90, 38.30, 43.30, 48.70, 54.10],
+          "De 3 a 4 kg": [9.21, 12.50, 13.93, 35.70, 41.50, 46.70, 52.70, 58.50],
+          "De 4 a 5 kg": [9.36, 12.64, 14.64, 39.50, 45.70, 52.10, 58.50, 64.90],
+          "De 5 a 6 kg": [9.50, 12.79, 14.79, 51.90, 58.30, 66.70, 72.90, 81.70],
+          "De 6 a 7 kg": [9.64, 12.93, 14.93, 55.10, 63.30, 73.50, 81.70, 90.50],
+          "De 7 a 8 kg": [9.79, 13.21, 15.07, 58.90, 68.70, 78.50, 88.30, 98.70],
+          "De 8 a 9 kg": [9.93, 13.36, 15.21, 60.50, 70.50, 80.70, 90.70, 101.50],
+          "De 9 a 10 kg": [10.07, 13.50, 15.50, 76.50, 90.10, 103.90, 117.50, 131.70],
+          "De 10 a 11 kg": [10.07, 13.79, 15.79, 83.30, 97.10, 110.90, 124.70, 138.70],
+          "De 11 a 13 kg": [10.21, 14.36, 16.36, 85.10, 99.50, 113.70, 127.70, 141.90],
+          "De 13 a 15 kg": [10.36, 14.64, 16.64, 91.10, 105.90, 121.10, 136.30, 151.30],
+          "De 15 a 17 kg": [10.50, 14.93, 16.93, 97.90, 113.10, 128.10, 142.70, 158.70],
+          "De 17 a 20 kg": [10.64, 15.21, 17.21, 110.30, 128.70, 147.10, 165.50, 183.90],
+          "De 20 a 25 kg": [10.93, 15.79, 17.50, 129.10, 151.50, 170.90, 192.50, 213.70],
+          "De 25 a 30 kg": [11.07, 16.07, 17.79, 132.90, 152.10, 172.50, 194.30, 215.70],
+          "De 30 a 40 kg": [11.21, 16.36, 18.07, 136.70, 159.30, 179.50, 200.10, 215.90],
+          "De 40 a 50 kg": [11.36, 16.64, 18.36, 141.90, 163.70, 185.70, 206.90, 223.30],
+          "De 50 a 60 kg": [11.50, 16.93, 18.64, 151.10, 174.50, 198.10, 220.50, 238.10],
+          "De 60 a 70 kg": [11.64, 17.21, 18.93, 161.90, 187.50, 211.90, 236.10, 254.90],
+          "De 70 a 80 kg": [11.79, 17.50, 19.21, 169.30, 195.90, 221.50, 246.70, 266.30],
+          "De 80 a 90 kg": [11.93, 17.79, 19.50, 188.10, 216.70, 245.90, 273.90, 295.70],
+          "De 90 a 100 kg": [12.07, 18.07, 19.79, 214.90, 249.70, 280.90, 312.90, 337.70],
+          "De 100 a 125 kg": [12.21, 18.36, 20.07, 240.30, 277.90, 313.90, 349.70, 377.70],
+          "De 125 a 150 kg": [12.36, 18.36, 20.36, 254.90, 294.10, 333.10, 371.10, 400.70],
+          "Mais de 150 kg": [12.50, 18.36, 20.64, 334.10, 386.70, 436.90, 486.90, 525.70]
+        };
+
+        const DEFAULT_EMBALAGENS = [
+          { id: '1', nome: 'PP', valor: 0.02, unidade: 'unidade' },
+          { id: '2', nome: 'P', valor: 0.03, unidade: 'unidade' },
+          { id: '3', nome: 'M', valor: 0.07, unidade: 'unidade' },
+          { id: '4', nome: 'G', valor: 0.08, unidade: 'unidade' },
+          { id: '5', nome: 'Kraft', valor: 0.72, unidade: 'metro' },
+          { id: '6', nome: 'Stretch', valor: 0.26, unidade: 'metro' },
+          { id: '7', nome: 'Papelão', valor: 1.84, unidade: 'metro' }
+        ];
+
+        const DEFAULT_CATEGORIAS = [
+          { id: '1', nome: 'Ferramentas e Construção', classico: 12, premium: 17 },
+          { id: '2', nome: 'Indústria e Comércio', classico: 12, premium: 17 },
+          { id: '3', nome: 'Casa Móveis e Decoração', classico: 13, premium: 18 },
+          { id: '4', nome: 'Arte Papelaria e Armarinho', classico: 16.75, premium: 21 },
+          { id: '5', nome: 'Eletrônicos', classico: 12, premium: 17 },
+          { id: '6', nome: 'Moda e Acessórios', classico: 14, premium: 19 }
+        ];
+
+        // ESTADO
+        let embalagens = [];
+        let categorias = [];
+
+        // CARREGAR DADOS DO LOCALSTORAGE
+        function loadStorage() {
+          try {
+            const rawEmb = localStorage.getItem('ewm_embalagens');
+            embalagens = rawEmb ? JSON.parse(rawEmb) : DEFAULT_EMBALAGENS;
+            if (!Array.isArray(embalagens) || embalagens.length === 0) {
+              embalagens = DEFAULT_EMBALAGENS;
+            }
+          } catch (e) {
+            embalagens = DEFAULT_EMBALAGENS;
+          }
+
+          try {
+            const rawCat = localStorage.getItem('ewm_categorias_ml');
+            categorias = rawCat ? JSON.parse(rawCat) : DEFAULT_CATEGORIAS;
+            if (!Array.isArray(categorias) || categorias.length === 0) {
+              categorias = DEFAULT_CATEGORIAS;
+            }
+          } catch (e) {
+            categorias = DEFAULT_CATEGORIAS;
+          }
+        }
+
+        function saveEmbalagensStorage() {
+          try {
+            localStorage.setItem('ewm_embalagens', JSON.stringify(embalagens));
+          } catch (e) {
+            console.error('Erro ao salvar embalagens', e);
+          }
+        }
+
+        function saveCategoriasStorage() {
+          try {
+            localStorage.setItem('ewm_categorias_ml', JSON.stringify(categorias));
+          } catch (e) {
+            console.error('Erro ao salvar categorias', e);
+          }
+        }
+
+        // FORMATADOR DE MOEDA BRL
+        const fmtBRL = (val) => {
+          if (typeof val !== 'number' || isNaN(val)) return 'R$ 0,00';
+          return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        };
+
+        const fmtPct = (val) => {
+          if (typeof val !== 'number' || isNaN(val)) return '0,0%';
+          return (val).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 2 }) + '%';
+        };
+
+        // ARREDONDAMENTO MONETÁRIO EXATO (2 CASAS DECIMAIS)
+        const roundCents = (val) => {
+          return Math.round((val + Number.EPSILON) * 100) / 100;
+        };
+
+        // POPULAR DROPDOWNS
+        const selectEmb = document.getElementById('select-embalagem');
+        const qtdeEmbInput = document.getElementById('qtde-embalagem');
+        const selectCat = document.getElementById('select-ml-categoria');
+        const selectPeso = document.getElementById('select-ml-peso');
+
+        function populateEmbalagensDropdown() {
+          const currentVal = selectEmb.value;
+          selectEmb.innerHTML = '';
+          embalagens.forEach(item => {
+            const opt = document.createElement('option');
+            opt.value = item.id;
+            opt.textContent = `${item.nome} (${fmtBRL(item.valor)} / ${item.unidade})`;
+            selectEmb.appendChild(opt);
+          });
+
+          // Restaurar seleção ou pegar o primeiro
+          if (embalagens.some(e => e.id === currentVal)) {
+            selectEmb.value = currentVal;
+          } else if (embalagens.length > 0) {
+            selectEmb.value = embalagens[0].id;
+          }
+          adjustQtdeState();
+        }
+
+        function populateCategoriasDropdown() {
+          const currentVal = selectCat.value;
+          selectCat.innerHTML = '';
+          categorias.forEach(item => {
+            const opt = document.createElement('option');
+            opt.value = item.id;
+            opt.textContent = `${item.nome} (Clássico ${item.classico}% / Prem. ${item.premium}%)`;
+            selectCat.appendChild(opt);
+          });
+
+          if (categorias.some(c => c.id === currentVal)) {
+            selectCat.value = currentVal;
+          } else if (categorias.length > 0) {
+            selectCat.value = categorias[0].id;
+          }
+        }
+
+        function populatePesosDropdown() {
+          selectPeso.innerHTML = '';
+          Object.keys(ML_FRETE_RATES).forEach(faixa => {
+            const opt = document.createElement('option');
+            opt.value = faixa;
+            opt.textContent = faixa;
+            selectPeso.appendChild(opt);
+          });
+          selectPeso.value = "Até 0,3 kg";
+        }
+
+        function adjustQtdeState() {
+          const selected = embalagens.find(e => e.id === selectEmb.value);
+          if (selected) {
+            if (selected.unidade === 'unidade') {
+              qtdeEmbInput.value = '1';
+              qtdeEmbInput.readOnly = true;
+              qtdeEmbInput.style.backgroundColor = '#f1f5f9';
+              qtdeEmbInput.title = 'Embalagem por unidade: quantidade fixa em 1';
+            } else {
+              qtdeEmbInput.readOnly = false;
+              qtdeEmbInput.style.backgroundColor = '#fff';
+              qtdeEmbInput.title = 'Embalagem por metro: informe a quantidade em metros';
+              if (!qtdeEmbInput.value || Number(qtdeEmbInput.value) <= 0) {
+                qtdeEmbInput.value = '1';
+              }
+            }
+          }
+        }
+
+        // CÁLCULO GERAL
+        function calculate() {
+          try {
+            const custoProd = parseFloat(document.getElementById('custo-produto').value) || 0;
+            const custoEtiqueta = parseFloat(document.getElementById('custo-etiqueta').value) || 0;
+            const impostoPct = parseFloat(document.getElementById('aliquota-imposto').value) || 0;
+            const repPct = parseFloat(document.getElementById('comissao-representante').value) || 0;
+            const margemDesejadaPct = parseFloat(document.getElementById('margem-lucro').value) || 0;
+
+            // Custo da Embalagem
+            const selectedEmb = embalagens.find(e => e.id === selectEmb.value) || embalagens[0];
+            let embCustoUnit = selectedEmb ? selectedEmb.valor : 0;
+            let embQtde = 1;
+            if (selectedEmb && selectedEmb.unidade === 'metro') {
+              embQtde = parseFloat(qtdeEmbInput.value) || 1;
+            }
+            const custoEmbalagemTotal = embCustoUnit * embQtde;
+
+            // Custos Fixos (CF)
+            const CF = custoProd + custoEtiqueta + custoEmbalagemTotal;
+
+            // 1. TIKTOK SHOP
+            // Regra: se preco < 50: comissao 10%, fixa 4.00. Se preco >= 50: comissao 6%, fixa 6.00
+            // Frete gratis: 6% do preco, teto R$ 50
+            let ttPrecoFinal = 0;
+            let ttComissaoPct = 0;
+            let ttTaxaFixa = 0;
+            let ttFreteValor = 0;
+            let ttFaixaDesc = '';
+
+            // Teste Faixa 1 (< 50):
+            // Divisor = 1 - (imp + rep + comissao 10% + frete 6% + margem)/100
+            const ttDiv1 = 1 - (impostoPct + repPct + 10 + 6 + margemDesejadaPct) / 100;
+            const p1 = ttDiv1 > 0 ? roundCents((CF + 4.00) / ttDiv1) : 999999;
+
+            if (p1 < 50.0) {
+              ttPrecoFinal = p1;
+              ttComissaoPct = 0.10;
+              ttTaxaFixa = 4.00;
+              ttFreteValor = roundCents(Math.min(0.06 * ttPrecoFinal, 50.00));
+              ttFaixaDesc = 'Preço < R$ 50 (10% + R$ 4,00)';
+            } else {
+              // Teste Faixa 2 (>= 50):
+              const ttDiv2 = 1 - (impostoPct + repPct + 6 + 6 + margemDesejadaPct) / 100;
+              let p2 = ttDiv2 > 0 ? roundCents((CF + 6.00) / ttDiv2) : 999999;
+
+              // Se o frete de 6% atingir o teto de R$ 50,00 (ocorre acima de R$ 833,33)
+              if (0.06 * p2 > 50.00) {
+                const ttDiv2Cap = 1 - (impostoPct + repPct + 6 + margemDesejadaPct) / 100;
+                p2 = ttDiv2Cap > 0 ? roundCents((CF + 6.00 + 50.00) / ttDiv2Cap) : 999999;
+              }
+
+              ttPrecoFinal = p2;
+              ttComissaoPct = 0.06;
+              ttTaxaFixa = 6.00;
+              ttFreteValor = roundCents(Math.min(0.06 * ttPrecoFinal, 50.00));
+              ttFaixaDesc = 'Preço ≥ R$ 50 (6% + R$ 6,00)';
+            }
+
+            // Recalcular componentes sobre o preço final exato
+            const ttImposto = (impostoPct / 100) * ttPrecoFinal;
+            const ttRep = (repPct / 100) * ttPrecoFinal;
+            const ttComissaoPlat = ttComissaoPct * ttPrecoFinal;
+            const ttTotalTaxas = ttImposto + ttRep + ttComissaoPlat + ttTaxaFixa + ttFreteValor;
+            const ttLucroLiq = ttPrecoFinal - CF - ttTotalTaxas;
+            const ttMargemReal = ttPrecoFinal > 0 ? (ttLucroLiq / ttPrecoFinal) * 100 : 0;
+
+            // 2. SHOPEE (CNPJ Vigente 01/03/2026)
+            // Faixas:
+            // F1: até 79.99 -> 20% + 4.50
+            // F2: 80 a 99.99 -> 14% + 16.00
+            // F3: 100 a 199.99 -> 14% + 20.00
+            // F4: >= 200 -> 14% + 26.00
+            const shopeeFaixas = [
+              { min: 0, max: 79.99, com: 0.20, fix: 4.50, label: 'Até R$ 79,99 (20% + R$ 4,50)' },
+              { min: 80.00, max: 99.99, com: 0.14, fix: 16.00, label: 'R$ 80 a R$ 99,99 (14% + R$ 16,00)' },
+              { min: 100.00, max: 199.99, com: 0.14, fix: 20.00, label: 'R$ 100 a R$ 199,99 (14% + R$ 20,00)' },
+              { min: 200.00, max: Infinity, com: 0.14, fix: 26.00, label: 'Acima de R$ 200 (14% + R$ 26,00)' }
+            ];
+
+            let shopeePrecoFinal = 0;
+            let shopeeSelectedFaixa = shopeeFaixas[0];
+
+            for (const f of shopeeFaixas) {
+              const div = 1 - (impostoPct + repPct) / 100 - f.com - (margemDesejadaPct / 100);
+              if (div > 0) {
+                const rawP = (CF + f.fix) / div;
+                const pCand = roundCents(rawP);
+                if (pCand >= f.min && pCand <= f.max) {
+                  shopeePrecoFinal = pCand;
+                  shopeeSelectedFaixa = f;
+                  break;
+                }
+              }
+            }
+
+            // Fallback caso caia na transição entre faixas
+            if (!shopeePrecoFinal) {
+              for (const f of shopeeFaixas) {
+                const div = 1 - (impostoPct + repPct) / 100 - f.com - (margemDesejadaPct / 100);
+                if (div > 0) {
+                  const candidate = roundCents((CF + f.fix) / div);
+                  if (candidate >= f.min) {
+                    shopeePrecoFinal = candidate;
+                    shopeeSelectedFaixa = f;
+                    break;
+                  }
+                }
+              }
+              if (!shopeePrecoFinal) {
+                const lastF = shopeeFaixas[shopeeFaixas.length - 1];
+                const div = 1 - (impostoPct + repPct) / 100 - lastF.com - (margemDesejadaPct / 100);
+                shopeePrecoFinal = roundCents((CF + lastF.fix) / Math.max(div, 0.05));
+                shopeeSelectedFaixa = lastF;
+              }
+            }
+
+            const shopeeImposto = (impostoPct / 100) * shopeePrecoFinal;
+            const shopeeRep = (repPct / 100) * shopeePrecoFinal;
+            const shopeeComissaoPlat = shopeeSelectedFaixa.com * shopeePrecoFinal;
+            const shopeeTaxaFixa = shopeeSelectedFaixa.fix;
+            const shopeeFrete = 0; // Incluso na comissão/tabela
+            const shopeeTotalTaxas = shopeeImposto + shopeeRep + shopeeComissaoPlat + shopeeTaxaFixa + shopeeFrete;
+            const shopeeLucroLiq = shopeePrecoFinal - CF - shopeeTotalTaxas;
+            const shopeeMargemReal = shopeePrecoFinal > 0 ? (shopeeLucroLiq / shopeePrecoFinal) * 100 : 0;
+
+            // 3. MERCADO LIVRE
+            const mlTipo = document.getElementById('ml-tipo-anuncio').value;
+            const selectedCat = categorias.find(c => c.id === selectCat.value) || categorias[0];
+            const mlComissaoPct = selectedCat ? (mlTipo === 'premium' ? selectedCat.premium : selectedCat.classico) : 12;
+            const pesoFaixa = selectPeso.value || "Até 0,3 kg";
+            const rates = ML_FRETE_RATES[pesoFaixa] || ML_FRETE_RATES["Até 0,3 kg"];
+
+            // Limites da tabela de frete:
+            // 0: <= 18.99
+            // 1: 19 - 48.99
+            // 2: 49 - 78.99
+            // 3: 79 - 99.99
+            // 4: 100 - 119.99
+            // 5: 120 - 149.99
+            // 6: 150 - 199.99
+            // 7: >= 200
+            const ML_INTERVALS = [
+              { min: 0, max: 18.99, frete: rates[0] },
+              { min: 19.00, max: 48.99, frete: rates[1] },
+              { min: 49.00, max: 78.99, frete: rates[2] },
+              { min: 79.00, max: 99.99, frete: rates[3] },
+              { min: 100.00, max: 119.99, frete: rates[4] },
+              { min: 120.00, max: 149.99, frete: rates[5] },
+              { min: 150.00, max: 199.99, frete: rates[6] },
+              { min: 200.00, max: Infinity, frete: rates[7] }
+            ];
+
+            const mlDivisor = 1 - (impostoPct + repPct + mlComissaoPct + margemDesejadaPct) / 100;
+            let mlPrecoFinal = 0;
+            let mlFreteValor = 0;
+
+            if (mlDivisor > 0) {
+              let found = false;
+              for (const interval of ML_INTERVALS) {
+                const rawP = (CF + interval.frete) / mlDivisor;
+                const pCand = roundCents(rawP);
+                if (pCand >= interval.min && pCand <= interval.max) {
+                  mlPrecoFinal = pCand;
+                  mlFreteValor = interval.frete;
+                  found = true;
+                  break;
+                }
+              }
+
+              // Se cair em degrau de transição entre faixas de frete
+              if (!found) {
+                for (const interval of ML_INTERVALS) {
+                  const pCand = roundCents((CF + interval.frete) / mlDivisor);
+                  if (pCand >= interval.min) {
+                    mlPrecoFinal = pCand;
+                    mlFreteValor = interval.frete;
+                    found = true;
+                    break;
+                  }
+                }
+              }
+
+              if (!found) {
+                const lastFrete = rates[7];
+                mlPrecoFinal = roundCents((CF + lastFrete) / mlDivisor);
+                mlFreteValor = lastFrete;
+              }
+            } else {
+              mlPrecoFinal = 999.00;
+              mlFreteValor = rates[7];
+            }
+
+            const mlImposto = (impostoPct / 100) * mlPrecoFinal;
+            const mlRep = (repPct / 100) * mlPrecoFinal;
+            const mlComissaoPlat = (mlComissaoPct / 100) * mlPrecoFinal;
+            const mlTaxaFixa = 0; // SEM taxa fixa
+            const mlTotalTaxas = mlImposto + mlRep + mlComissaoPlat + mlTaxaFixa + mlFreteValor;
+            const mlLucroLiq = mlPrecoFinal - CF - mlTotalTaxas;
+            const mlMargemReal = mlPrecoFinal > 0 ? (mlLucroLiq / mlPrecoFinal) * 100 : 0;
+
+            // RENDERIZAR RESULTADOS NA TELA
+            // 1. TikTok
+            document.getElementById('tt-preco').textContent = fmtBRL(ttPrecoFinal);
+            document.getElementById('tt-faixa').textContent = ttFaixaDesc;
+            document.getElementById('tt-imposto').textContent = fmtBRL(ttImposto);
+            document.getElementById('tt-comissao-rep').textContent = fmtBRL(ttRep);
+            document.getElementById('tt-comissao-plat').textContent = `${fmtBRL(ttComissaoPlat)} (${(ttComissaoPct*100).toFixed(0)}%)`;
+            document.getElementById('tt-taxa-fixa').textContent = fmtBRL(ttTaxaFixa);
+            document.getElementById('tt-frete').textContent = fmtBRL(ttFreteValor);
+            document.getElementById('tt-total-taxas').textContent = fmtBRL(ttTotalTaxas);
+            document.getElementById('tt-lucro-liquido').textContent = fmtBRL(ttLucroLiq);
+            document.getElementById('tt-margem-real').textContent = fmtPct(ttMargemReal);
+
+            // 2. Shopee
+            document.getElementById('shopee-preco').textContent = fmtBRL(shopeePrecoFinal);
+            document.getElementById('shopee-faixa').textContent = shopeeSelectedFaixa.label;
+            document.getElementById('shopee-imposto').textContent = fmtBRL(shopeeImposto);
+            document.getElementById('shopee-comissao-rep').textContent = fmtBRL(shopeeRep);
+            document.getElementById('shopee-comissao-plat').textContent = `${fmtBRL(shopeeComissaoPlat)} (${(shopeeSelectedFaixa.com*100).toFixed(0)}%)`;
+            document.getElementById('shopee-taxa-fixa').textContent = fmtBRL(shopeeTaxaFixa);
+            document.getElementById('shopee-frete').textContent = fmtBRL(shopeeFrete);
+            document.getElementById('shopee-total-taxas').textContent = fmtBRL(shopeeTotalTaxas);
+            document.getElementById('shopee-lucro-liquido').textContent = fmtBRL(shopeeLucroLiq);
+            document.getElementById('shopee-margem-real').textContent = fmtPct(shopeeMargemReal);
+
+            // 3. Mercado Livre
+            document.getElementById('ml-preco').textContent = fmtBRL(mlPrecoFinal);
+            document.getElementById('ml-faixa').textContent = `${mlTipo === 'premium' ? 'Premium' : 'Clássico'} — ${selectedCat ? selectedCat.nome : ''} (${mlComissaoPct}%)`;
+            document.getElementById('ml-imposto').textContent = fmtBRL(mlImposto);
+            document.getElementById('ml-comissao-rep').textContent = fmtBRL(mlRep);
+            document.getElementById('ml-comissao-plat').textContent = `${fmtBRL(mlComissaoPlat)} (${mlComissaoPct}%)`;
+            document.getElementById('ml-taxa-fixa').textContent = fmtBRL(mlTaxaFixa);
+            document.getElementById('ml-frete').textContent = fmtBRL(mlFreteValor);
+            document.getElementById('ml-total-taxas').textContent = fmtBRL(mlTotalTaxas);
+            document.getElementById('ml-lucro-liquido').textContent = fmtBRL(mlLucroLiq);
+            document.getElementById('ml-margem-real').textContent = fmtPct(mlMargemReal);
+
+            // DESTACAR MENOR PREÇO FINAL (BADGE + CARD CLASS)
+            const precos = [
+              { id: 'tiktok', preco: ttPrecoFinal },
+              { id: 'shopee', preco: shopeePrecoFinal },
+              { id: 'mercadolivre', preco: mlPrecoFinal }
+            ];
+
+            let minP = Math.min(...precos.map(p => p.preco));
+
+            precos.forEach(p => {
+              const card = document.getElementById(`card-${p.id}`);
+              const badge = document.getElementById(`badge-best-${p.id}`);
+              if (Math.abs(p.preco - minP) < 0.001) {
+                card.classList.add('best-price');
+                badge.style.display = 'inline-block';
+              } else {
+                card.classList.remove('best-price');
+                badge.style.display = 'none';
+              }
+            });
+
+          } catch (err) {
+            console.error('Erro durante o cálculo:', err);
+          }
+        }
+
+        // EVENT LISTENERS DO FORMULÁRIO PRINCIPAL
+        const mainInputs = [
+          'custo-produto', 'custo-etiqueta', 'select-embalagem', 'qtde-embalagem',
+          'aliquota-imposto', 'comissao-representante', 'margem-lucro',
+          'ml-tipo-anuncio', 'select-ml-categoria', 'select-ml-peso'
+        ];
+
+        mainInputs.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.addEventListener('input', calculate);
+            el.addEventListener('change', () => {
+              if (id === 'select-embalagem') {
+                adjustQtdeState();
+              }
+              calculate();
+            });
+          }
+        });
+
+        // ==========================================
+        // GERENCIADOR DE EMBALAGENS (MODAL + CRUD)
+        // ==========================================
+        const modalEmb = document.getElementById('modal-embalagens');
+        const btnOpenModalEmb = document.getElementById('btn-open-modal-embalagens');
+        const formEmb = document.getElementById('form-embalagem');
+        const embTableBody = document.getElementById('emb-table-body');
+        const embError = document.getElementById('emb-error');
+        const btnCancelEmb = document.getElementById('btn-cancel-emb');
+        const embFormTitle = document.getElementById('emb-form-title');
+
+        function renderEmbalagensTable() {
+          embTableBody.innerHTML = '';
+          embalagens.forEach(emb => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td><strong>${escapeHtml(emb.nome)}</strong></td>
+              <td>${fmtBRL(emb.valor)}</td>
+              <td><span style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-size:0.75rem;">${emb.unidade}</span></td>
+              <td style="text-align:right;">
+                <button type="button" class="btn-action-icon btn-edit-emb" data-id="${emb.id}" title="Editar">✏️ Editar</button>
+                <button type="button" class="btn-action-icon btn-danger btn-delete-emb" data-id="${emb.id}" title="Excluir">🗑️ Excluir</button>
+              </td>
+            `;
+            embTableBody.appendChild(tr);
+          });
+        }
+
+        function resetEmbForm() {
+          document.getElementById('emb-id').value = '';
+          document.getElementById('emb-nome').value = '';
+          document.getElementById('emb-valor').value = '';
+          document.getElementById('emb-unidade').value = 'unidade';
+          embError.classList.remove('is-visible');
+          btnCancelEmb.style.display = 'none';
+          document.getElementById('btn-save-emb').textContent = 'Salvar Embalagem';
+          embFormTitle.textContent = 'Adicionar Nova Embalagem';
+        }
+
+        btnOpenModalEmb.addEventListener('click', () => {
+          resetEmbForm();
+          renderEmbalagensTable();
+          modalEmb.classList.add('is-open');
+        });
+
+        btnCancelEmb.addEventListener('click', resetEmbForm);
+
+        formEmb.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const id = document.getElementById('emb-id').value;
+          const nome = document.getElementById('emb-nome').value.trim();
+          const valor = parseFloat(document.getElementById('emb-valor').value);
+          const unidade = document.getElementById('emb-unidade').value;
+
+          if (!nome || isNaN(valor) || valor <= 0) {
+            embError.classList.add('is-visible');
+            return;
+          }
+          embError.classList.remove('is-visible');
+
+          if (id) {
+            // Edição
+            const index = embalagens.findIndex(e => e.id === id);
+            if (index !== -1) {
+              embalagens[index] = { ...embalagens[index], nome, valor, unidade };
+            }
+          } else {
+            // Adição
+            const newId = Date.now().toString();
+            embalagens.push({ id: newId, nome, valor, unidade });
+          }
+
+          saveEmbalagensStorage();
+          populateEmbalagensDropdown();
+          renderEmbalagensTable();
+          resetEmbForm();
+          calculate();
+        });
+
+        // Delegação de eventos no corpo da tabela de embalagens
+        embTableBody.addEventListener('click', (e) => {
+          const editBtn = e.target.closest('.btn-edit-emb');
+          const deleteBtn = e.target.closest('.btn-delete-emb');
+
+          if (editBtn) {
+            const id = editBtn.getAttribute('data-id');
+            const item = embalagens.find(e => e.id === id);
+            if (item) {
+              document.getElementById('emb-id').value = item.id;
+              document.getElementById('emb-nome').value = item.nome;
+              document.getElementById('emb-valor').value = item.valor;
+              document.getElementById('emb-unidade').value = item.unidade;
+              btnCancelEmb.style.display = 'inline-block';
+              document.getElementById('btn-save-emb').textContent = 'Atualizar';
+              embFormTitle.textContent = `Editando: ${item.nome}`;
+              embError.classList.remove('is-visible');
+              document.getElementById('emb-nome').focus();
+            }
+          }
+
+          if (deleteBtn) {
+            const id = deleteBtn.getAttribute('data-id');
+            if (embalagens.length <= 1) {
+              alert('Não é possível excluir a única embalagem cadastrada.');
+              return;
+            }
+            const item = embalagens.find(e => e.id === id);
+            if (confirm(`Tem certeza que deseja excluir a embalagem "${item ? item.nome : ''}"?`)) {
+              embalagens = embalagens.filter(e => e.id !== id);
+              saveEmbalagensStorage();
+              populateEmbalagensDropdown();
+              renderEmbalagensTable();
+              resetEmbForm();
+              calculate();
+            }
+          }
+        });
+
+        // ==========================================
+        // GERENCIADOR DE CATEGORIAS ML (MODAL + CRUD)
+        // ==========================================
+        const modalCat = document.getElementById('modal-categorias');
+        const btnOpenModalCat = document.getElementById('btn-open-modal-categorias');
+        const formCat = document.getElementById('form-categoria');
+        const catTableBody = document.getElementById('cat-table-body');
+        const catError = document.getElementById('cat-error');
+        const btnCancelCat = document.getElementById('btn-cancel-cat');
+        const catFormTitle = document.getElementById('cat-form-title');
+
+        function renderCategoriasTable() {
+          catTableBody.innerHTML = '';
+          categorias.forEach(cat => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td><strong>${escapeHtml(cat.nome)}</strong></td>
+              <td>${cat.classico}%</td>
+              <td>${cat.premium}%</td>
+              <td style="text-align:right;">
+                <button type="button" class="btn-action-icon btn-edit-cat" data-id="${cat.id}" title="Editar">✏️ Editar</button>
+                <button type="button" class="btn-action-icon btn-danger btn-delete-cat" data-id="${cat.id}" title="Excluir">🗑️ Excluir</button>
+              </td>
+            `;
+            catTableBody.appendChild(tr);
+          });
+        }
+
+        function resetCatForm() {
+          document.getElementById('cat-id').value = '';
+          document.getElementById('cat-nome').value = '';
+          document.getElementById('cat-classico').value = '';
+          document.getElementById('cat-premium').value = '';
+          catError.classList.remove('is-visible');
+          btnCancelCat.style.display = 'none';
+          document.getElementById('btn-save-cat').textContent = 'Salvar Categoria';
+          catFormTitle.textContent = 'Adicionar Nova Categoria';
+        }
+
+        btnOpenModalCat.addEventListener('click', () => {
+          resetCatForm();
+          renderCategoriasTable();
+          modalCat.classList.add('is-open');
+        });
+
+        btnCancelCat.addEventListener('click', resetCatForm);
+
+        formCat.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const id = document.getElementById('cat-id').value;
+          const nome = document.getElementById('cat-nome').value.trim();
+          const classico = parseFloat(document.getElementById('cat-classico').value);
+          const premium = parseFloat(document.getElementById('cat-premium').value);
+
+          if (!nome || isNaN(classico) || isNaN(premium) || classico < 0 || classico > 100 || premium < 0 || premium > 100) {
+            catError.classList.add('is-visible');
+            return;
+          }
+          catError.classList.remove('is-visible');
+
+          if (id) {
+            // Edição
+            const index = categorias.findIndex(c => c.id === id);
+            if (index !== -1) {
+              categorias[index] = { ...categorias[index], nome, classico, premium };
+            }
+          } else {
+            // Adição
+            const newId = Date.now().toString();
+            categorias.push({ id: newId, nome, classico, premium });
+          }
+
+          saveCategoriasStorage();
+          populateCategoriasDropdown();
+          renderCategoriasTable();
+          resetCatForm();
+          calculate();
+        });
+
+        // Delegação na tabela de categorias
+        catTableBody.addEventListener('click', (e) => {
+          const editBtn = e.target.closest('.btn-edit-cat');
+          const deleteBtn = e.target.closest('.btn-delete-cat');
+
+          if (editBtn) {
+            const id = editBtn.getAttribute('data-id');
+            const item = categorias.find(c => c.id === id);
+            if (item) {
+              document.getElementById('cat-id').value = item.id;
+              document.getElementById('cat-nome').value = item.nome;
+              document.getElementById('cat-classico').value = item.classico;
+              document.getElementById('cat-premium').value = item.premium;
+              btnCancelCat.style.display = 'inline-block';
+              document.getElementById('btn-save-cat').textContent = 'Atualizar';
+              catFormTitle.textContent = `Editando: ${item.nome}`;
+              catError.classList.remove('is-visible');
+              document.getElementById('cat-nome').focus();
+            }
+          }
+
+          if (deleteBtn) {
+            const id = deleteBtn.getAttribute('data-id');
+            if (categorias.length <= 1) {
+              alert('Não é possível excluir a única categoria cadastrada.');
+              return;
+            }
+            const item = categorias.find(c => c.id === id);
+            if (confirm(`Tem certeza que deseja excluir a categoria "${item ? item.nome : ''}"?`)) {
+              categorias = categorias.filter(c => c.id !== id);
+              saveCategoriasStorage();
+              populateCategoriasDropdown();
+              renderCategoriasTable();
+              resetCatForm();
+              calculate();
+            }
+          }
+        });
+
+        // Fechamento dos Modais
+        document.querySelectorAll('[data-close]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const modalId = btn.getAttribute('data-close');
+            const target = document.getElementById(modalId);
+            if (target) target.classList.remove('is-open');
+          });
+        });
+
+        document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+          backdrop.addEventListener('click', (e) => {
+            if (e.target === backdrop) {
+              backdrop.classList.remove('is-open');
+            }
+          });
+        });
+
+        // Escape string helper
+        function escapeHtml(str) {
+          if (!str) return '';
+          return str.replace(/[&<>"']/g, function(m) {
+            return {
+              '&': '&amp;',
+              '<': '&lt;',
+              '>': '&gt;',
+              '"': '&quot;',
+              "'": '&#039;'
+            }[m];
+          });
+        }
+
+        // INICIALIZAÇÃO
+        loadStorage();
+        populateEmbalagensDropdown();
+        populateCategoriasDropdown();
+        populatePesosDropdown();
+        calculate();
+
+      } catch (fatalErr) {
+        console.error('Falha na inicialização da aplicação:', fatalErr);
+      }
+    });
+  </script>
+<script>
+/* Skip artifact shell — fixed helpers served beside every artifact. */
+(function () {
+  "use strict";
+
+  var fmt = {
+    num: function (v, opts) { return new Intl.NumberFormat("pt-BR", opts || {}).format(v); },
+    brl: function (v) { return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v); },
+    pct: function (v) { return new Intl.NumberFormat("pt-BR", { style: "percent", maximumFractionDigits: 1 }).format(v); }
+  };
+
+  // axisFmt keeps axis tick labels short (compact notation) so long values
+  // (e.g. full BRL amounts) never clip against the plot edge.
+  function axisFmt(v) {
+    return fmt.num(v, { notation: "compact", maximumFractionDigits: 1 });
+  }
+
+  // format accepts a function OR one of the fmt names ("num" | "brl" | "pct").
+  function coerceFormat(spec) {
+    if (typeof spec === "function") return spec;
+    if (typeof spec === "string" && fmt[spec]) return fmt[spec];
+    return function (v) { return fmt.num(v); };
+  }
+
+  function accent() {
+    return getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#2563eb";
+  }
+  function mutedColor() {
+    return getComputedStyle(document.documentElement).getPropertyValue("--text-muted").trim() || "#5b6472";
+  }
+  function svgEl(tag, attrs) {
+    var el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    for (var k in attrs) el.setAttribute(k, attrs[k]);
+    return el;
+  }
+  function frame(el, w, h) {
+    var svg = svgEl("svg", { viewBox: "0 0 " + w + " " + h, role: "img" });
+    el.innerHTML = "";
+    el.appendChild(svg);
+    return svg;
+  }
+
+  // maxOf guards the axis scale: empty values would give -Infinity (truthy,
+  // so "|| 1" can't catch it) and a non-positive max would flip the chart.
+  function maxOf(values) {
+    var m = values.length ? Math.max.apply(null, values) : 0;
+    return m > 0 ? m : 1;
+  }
+
+  // bar(el, {labels:[], values:[], color?, format?}) — vertical bar chart.
+  function bar(el, cfg) {
+    var W = 640, H = 280, padL = 46, padB = 30, padT = 12;
+    var svg = frame(el, W, H);
+    var max = maxOf(cfg.values);
+    var n = cfg.values.length;
+    var plotW = W - padL - 12, plotH = H - padT - padB;
+    var step = plotW / n, bw = Math.min(step * 0.62, 64);
+    var color = cfg.color || accent();
+    var f = coerceFormat(cfg.format);
+    for (var g = 0; g <= 4; g++) {
+      var gy = padT + plotH - (plotH * g) / 4;
+      svg.appendChild(svgEl("line", { x1: padL, y1: gy, x2: W - 12, y2: gy, stroke: "currentColor", "stroke-opacity": 0.08 }));
+      var lbl = svgEl("text", { x: padL - 8, y: gy + 4, "text-anchor": "end", "font-size": 10, fill: mutedColor() });
+      lbl.textContent = axisFmt((max * g) / 4);
+      svg.appendChild(lbl);
+    }
+    cfg.values.forEach(function (v, i) {
+      var bh = Math.max(0, (v / max) * plotH);
+      var x = padL + i * step + (step - bw) / 2;
+      var y = padT + plotH - bh;
+      var r = svgEl("rect", { x: x, y: y, width: bw, height: bh, rx: 4, fill: color });
+      var t = svgEl("title", {});
+      t.textContent = cfg.labels[i] + ": " + f(v);
+      r.appendChild(t);
+      svg.appendChild(r);
+      var tx = svgEl("text", { x: x + bw / 2, y: H - 10, "text-anchor": "middle", "font-size": 11, fill: mutedColor() });
+      tx.textContent = cfg.labels[i];
+      svg.appendChild(tx);
+    });
+  }
+
+  // line(el, {labels:[], values:[], color?, format?}) — single-series line.
+  function line(el, cfg) {
+    var W = 640, H = 280, padL = 46, padB = 30, padT = 12;
+    var svg = frame(el, W, H);
+    var max = maxOf(cfg.values);
+    var n = cfg.values.length;
+    var plotW = W - padL - 16, plotH = H - padT - padB;
+    var color = cfg.color || accent();
+    var f = coerceFormat(cfg.format);
+    for (var g = 0; g <= 4; g++) {
+      var gy = padT + plotH - (plotH * g) / 4;
+      svg.appendChild(svgEl("line", { x1: padL, y1: gy, x2: W - 16, y2: gy, stroke: "currentColor", "stroke-opacity": 0.08 }));
+      var lbl = svgEl("text", { x: padL - 8, y: gy + 4, "text-anchor": "end", "font-size": 10, fill: mutedColor() });
+      lbl.textContent = axisFmt((max * g) / 4);
+      svg.appendChild(lbl);
+    }
+    var pts = cfg.values.map(function (v, i) {
+      var x = padL + (n === 1 ? plotW / 2 : (plotW * i) / (n - 1));
+      var y = padT + plotH - (v / max) * plotH;
+      return [x, y];
+    });
+    var d = pts.map(function (p, i) { return (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1); }).join(" ");
+    svg.appendChild(svgEl("path", { d: d, fill: "none", stroke: color, "stroke-width": 2, "stroke-linejoin": "round" }));
+    pts.forEach(function (p, i) {
+      var c = svgEl("circle", { cx: p[0], cy: p[1], r: 3.5, fill: color });
+      var t = svgEl("title", {});
+      t.textContent = cfg.labels[i] + ": " + f(cfg.values[i]);
+      c.appendChild(t);
+      svg.appendChild(c);
+      var tx = svgEl("text", { x: p[0], y: H - 10, "text-anchor": "middle", "font-size": 11, fill: mutedColor() });
+      tx.textContent = cfg.labels[i];
+      svg.appendChild(tx);
+    });
+  }
+
+  // donut(el, {labels:[], values:[], colors?}) — donut with center total.
+  function donut(el, cfg) {
+    var W = 320, H = 280, cx = W / 2, cy = H / 2, R = 92, r = 58;
+    var svg = frame(el, W, H);
+    var total = cfg.values.reduce(function (a, b) { return a + b; }, 0) || 1;
+    var palette = cfg.colors || [accent(), "#1baf7a", "#eda100", "#e34948", "#4a3aa7", "#e87ba4"];
+    var a0 = -Math.PI / 2;
+    cfg.values.forEach(function (v, i) {
+      var a1 = a0 + (v / total) * Math.PI * 2;
+      var large = a1 - a0 > Math.PI ? 1 : 0;
+      var p = ["M", cx + R * Math.cos(a0), cy + R * Math.sin(a0),
+        "A", R, R, 0, large, 1, cx + R * Math.cos(a1), cy + R * Math.sin(a1),
+        "L", cx + r * Math.cos(a1), cy + r * Math.sin(a1),
+        "A", r, r, 0, large, 0, cx + r * Math.cos(a0), cy + r * Math.sin(a0), "Z"].join(" ");
+      var path = svgEl("path", { d: p, fill: palette[i % palette.length] });
+      var t = svgEl("title", {});
+      t.textContent = cfg.labels[i] + ": " + fmt.num(v) + " (" + fmt.pct(v / total) + ")";
+      path.appendChild(t);
+      svg.appendChild(path);
+      a0 = a1;
+    });
+    var center = svgEl("text", { x: cx, y: cy + 5, "text-anchor": "middle", "font-size": 20, "font-weight": 650, fill: "currentColor" });
+    center.textContent = fmt.num(total);
+    svg.appendChild(center);
+  }
+
+  window.skipShell = { fmt: fmt };
+  window.skipChart = { bar: bar, line: line, donut: donut };
+})();
+
+</script>
+</body>
+</html>
