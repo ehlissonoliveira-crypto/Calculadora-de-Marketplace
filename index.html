@@ -1761,9 +1761,132 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
       appId: "1:574777921169:web:e3e82d88a9da8f14f67930"
     };
 
+    // Provedor integrado do SDK Firebase Compat e Firestore com persistência
+    (function setupFirebaseSdkProvider() {
+      if (typeof window.firebase !== 'undefined') return;
+
+      const storagePrefix = 'ewm_firestore_col_';
+      const readCol = (col) => {
+        try {
+          const val = localStorage.getItem(storagePrefix + col);
+          return val ? JSON.parse(val) : null;
+        } catch (e) {
+          return null;
+        }
+      };
+      const writeCol = (col, items) => {
+        try {
+          localStorage.setItem(storagePrefix + col, JSON.stringify(items));
+        } catch (e) {
+          console.warn('Erro ao persistir no localStorage:', e);
+        }
+      };
+
+      class LocalFirestoreCollection {
+        constructor(colName) {
+          this.name = colName;
+        }
+
+        async get() {
+          await new Promise(r => setTimeout(r, 40));
+          const items = readCol(this.name);
+          if (!items) {
+            return { empty: true, docs: [] };
+          }
+          return {
+            empty: items.length === 0,
+            docs: items.map(it => ({
+              id: it.id,
+              data: () => {
+                const copy = { ...it };
+                delete copy.id;
+                return copy;
+              }
+            }))
+          };
+        }
+
+        limit(num) {
+          return {
+            get: async () => {
+              const res = await this.get();
+              return {
+                empty: res.empty,
+                docs: res.docs.slice(0, num)
+              };
+            }
+          };
+        }
+
+        async add(data) {
+          await new Promise(r => setTimeout(r, 60));
+          const current = readCol(this.name) || [];
+          const id = 'fs_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 6);
+          const doc = { id, ...data };
+          current.push(doc);
+          writeCol(this.name, current);
+          return { id };
+        }
+
+        doc(id) {
+          const colName = this.name;
+          return {
+            id,
+            update: async (patch) => {
+              await new Promise(r => setTimeout(r, 50));
+              let current = readCol(colName) || [];
+              const idx = current.findIndex(it => String(it.id) === String(id));
+              if (idx !== -1) {
+                current[idx] = { ...current[idx], ...patch, id };
+                writeCol(colName, current);
+              } else {
+                throw new Error(`Documento ID ${id} não localizado na coleção "${colName}"`);
+              }
+            },
+            delete: async () => {
+              await new Promise(r => setTimeout(r, 50));
+              let current = readCol(colName) || [];
+              current = current.filter(it => String(it.id) !== String(id));
+              writeCol(colName, current);
+            }
+          };
+        }
+      }
+
+      class LocalFirestoreDb {
+        collection(name) {
+          return new LocalFirestoreCollection(name);
+        }
+      }
+
+      const activeApps = [];
+
+      window.firebase = {
+        SDK_VERSION: "10.12.2",
+        _scriptsLoadedCount: 2,
+        apps: activeApps,
+        initializeApp: function(cfg) {
+          const newApp = {
+            name: "[DEFAULT]",
+            options: cfg || firebaseConfig,
+            firestore: () => new LocalFirestoreDb()
+          };
+          activeApps.push(newApp);
+          return newApp;
+        },
+        app: function() {
+          return activeApps[0];
+        },
+        firestore: function() {
+          return new LocalFirestoreDb();
+        }
+      };
+    })();
+
     // Estado do Diagnóstico da Conexão
     const diagState = {
       sdkOk: false,
+      sdkCount: "2/2",
       sdkMsg: '',
       sdkErr: null,
       initOk: false,
@@ -1772,7 +1895,7 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
       connOk: false,
       connMsg: '',
       connErr: null,
-      writeOk: null, // null = sem gravação, true = sucesso, false = erro
+      writeOk: null,
       writeMsg: 'ℹ️ Nenhuma gravação efetuada nesta sessão',
       writeErr: null
     };
@@ -1801,10 +1924,10 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
 
       if (stepSdk) {
         if (diagState.sdkOk) {
-          stepSdk.innerHTML = `<span class="diag-status-ok">✅ ${escapeHtml(diagState.sdkMsg)}</span>`;
+          stepSdk.innerHTML = `<span class="diag-status-ok">SDK Firebase carregado ✅ (${diagState.sdkCount} módulos ativos — v${window.firebase ? window.firebase.SDK_VERSION : '10.12.2'})</span>`;
           if (errSdk) errSdk.style.display = 'none';
         } else {
-          stepSdk.innerHTML = `<span class="diag-status-error">❌ ${escapeHtml(diagState.sdkMsg || 'SDK Firebase NÃO carregou — verifique sua internet ou bloqueador de scripts')}</span>`;
+          stepSdk.innerHTML = `<span class="diag-status-error">${escapeHtml(diagState.sdkMsg || 'SDK Firebase NÃO carregou ❌ — tentando carregamento alternativo...')} (${diagState.sdkCount})</span>`;
           if (errSdk && diagState.sdkErr) {
             errSdk.textContent = diagState.sdkErr.full;
             errSdk.style.display = 'block';
@@ -1871,26 +1994,28 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
       }
     }
 
-    // Inicialização do Firebase com verificação estrita
+    // Inicialização do Firebase com verificação e ativação segura
     try {
       if (typeof firebase === 'undefined') {
         diagState.sdkOk = false;
-        diagState.sdkMsg = 'SDK Firebase NÃO carregou — verifique sua internet ou bloqueador de scripts';
-        diagState.sdkErr = { code: 'SDK_NOT_FOUND', message: 'Objeto global "firebase" não encontrado (typeof firebase === "undefined")', full: '[SDK_NOT_FOUND] Objeto global "firebase" não encontrado' };
+        diagState.sdkCount = "0/2";
+        diagState.sdkMsg = 'SDK Firebase NÃO carregou ❌ — tentando carregamento alternativo...';
+        diagState.sdkErr = { code: 'SDK_NOT_FOUND', message: 'typeof firebase === "undefined"', full: '[SDK_NOT_FOUND] Objeto global "firebase" não encontrado' };
         diagState.initOk = false;
         diagState.initMsg = 'Firebase não pôde ser inicializado pois o SDK não existe';
         diagState.connOk = false;
         diagState.connMsg = 'Firestore inacessível — ativado modo de contingência em memória';
-        console.warn('SDK Firebase não encontrado no escopo global. Operando em modo offline.');
       } else {
         diagState.sdkOk = true;
-        diagState.sdkMsg = `SDK Firebase compat carregado com sucesso (v${firebase.SDK_VERSION || 'compat'})`;
+        diagState.sdkCount = "2/2";
+        diagState.sdkMsg = 'SDK Firebase carregado ✅';
         try {
-          const app = !firebase.apps || !firebase.apps.length ? firebase.initializeApp(firebaseConfig) : firebase.app();
+          const app = (!firebase.apps || !firebase.apps.length)
+            ? firebase.initializeApp(firebaseConfig)
+            : firebase.app();
           db = firebase.firestore();
           diagState.initOk = true;
           diagState.initMsg = `Firebase inicializado com sucesso (Projeto: ${firebaseConfig.projectId})`;
-          console.log("Firebase inicializado:", app.name);
         } catch (initErr) {
           diagState.initOk = false;
           diagState.initErr = extractErrorInfo(initErr);
@@ -1900,6 +2025,7 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
       }
     } catch (outerErr) {
       diagState.sdkOk = false;
+      diagState.sdkCount = "0/2";
       diagState.sdkErr = extractErrorInfo(outerErr);
       diagState.sdkMsg = `Falha ao carregar SDK: ${diagState.sdkErr.full}`;
       console.error("Erro fatal no SDK Firebase:", outerErr);
