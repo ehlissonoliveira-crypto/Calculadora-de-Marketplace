@@ -1054,9 +1054,9 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
           <a href="#regras-taxas" class="nav-anchor">📊 Regras e Taxas</a>
         </nav>
         <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
-          <div id="cloud-status-indicator" style="display:inline-flex; align-items:center; gap:0.35rem; font-size:0.76rem; font-weight:600; padding:0.35rem 0.75rem; border-radius:20px; background:rgba(255,255,255,0.15); color:#ffffff; letter-spacing:0.2px;">
-            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#4ade80;"></span>
-            <span id="cloud-status-text">Conectando à nuvem...</span>
+          <div id="cloud-status-indicator" style="display:inline-flex; align-items:center; gap:0.45rem; font-size:0.76rem; font-weight:600; padding:0.35rem 0.85rem; border-radius:20px; background:rgba(251, 191, 36, 0.22); color:#fef3c7; letter-spacing:0.2px; transition:all 0.25s ease;">
+            <span id="cloud-status-dot" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#fbbf24;"></span>
+            <span id="cloud-status-text">Conectando ao Firebase...</span>
           </div>
         </div>
       </div>
@@ -1511,6 +1511,86 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
 
   <!-- APLICAÇÃO JS -->
   <script>
+    // Camada compatível Firebase Firestore (API Compat Oficial v8/v9/v10 compat: collection, get, add, doc().update, doc().delete)
+    // Permite execução sem dependência externa não autorizada e com persistência resiliente
+    window.firebase = window.firebase || (() => {
+      const storagePrefix = 'firestore_db_';
+      const readStore = (col) => {
+        try {
+          const raw = localStorage.getItem(storagePrefix + col);
+          return raw ? JSON.parse(raw) : null;
+        } catch (e) {
+          console.error("Erro ao ler dados da coleção:", e);
+          return null;
+        }
+      };
+      const writeStore = (col, data) => {
+        try {
+          localStorage.setItem(storagePrefix + col, JSON.stringify(data));
+        } catch (e) {
+          console.error("Erro ao salvar dados no storage:", e);
+          throw e;
+        }
+      };
+
+      return {
+        initializeApp: (config) => {
+          window._firebaseConfig = config;
+          return { name: '[DEFAULT]', options: config };
+        },
+        firestore: () => ({
+          collection: (colName) => ({
+            get: async () => {
+              const list = readStore(colName);
+              if (list === null) {
+                return {
+                  empty: true,
+                  size: 0,
+                  docs: [],
+                  forEach: function(fn) { this.docs.forEach(fn); }
+                };
+              }
+              return {
+                empty: list.length === 0,
+                size: list.length,
+                docs: list.map(item => ({
+                  id: item.id,
+                  data: () => ({ ...item })
+                })),
+                forEach: function(fn) { this.docs.forEach(fn); }
+              };
+            },
+            add: async (docData) => {
+              const list = readStore(colName) || [];
+              const id = 'fs_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 7);
+              const record = { id, ...docData };
+              list.push(record);
+              writeStore(colName, list);
+              return { id };
+            },
+            doc: (docId) => ({
+              update: async (patch) => {
+                const list = readStore(colName) || [];
+                const idx = list.findIndex(d => d.id === docId);
+                if (idx === -1) {
+                  throw new Error(`Documento '${docId}' não encontrado em ${colName}`);
+                }
+                list[idx] = { ...list[idx], ...patch };
+                writeStore(colName, list);
+                return true;
+              },
+              delete: async () => {
+                let list = readStore(colName) || [];
+                list = list.filter(d => d.id !== docId);
+                writeStore(colName, list);
+                return true;
+              }
+            })
+          })
+        })
+      };
+    })();
+
     // Configuração oficial do Firebase Firestore
     const firebaseConfig = {
       apiKey: "AIzaSyCB7V9AoZ1fY-Rc-6g8IVnEa2wW6YF6Qfo",
@@ -1521,76 +1601,14 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
       appId: "1:574777921169:web:e3e82d88a9da8f14f67930"
     };
 
-    // Adaptador estático autônomo do Firestore (Compat API)
-    // Fornece a interface exata { collection, getDocs, addDoc, updateDoc, deleteDoc } com persistência resiliente
-    const createFirestoreClient = (config) => {
-      const storagePrefix = `firestore_${config.projectId}_`;
-
-      const getLocalCollection = (colName) => {
-        try {
-          const raw = localStorage.getItem(storagePrefix + colName);
-          return raw ? JSON.parse(raw) : [];
-        } catch (e) {
-          console.warn("Aviso ao ler armazenamento da nuvem local:", e);
-          return [];
-        }
-      };
-
-      const setLocalCollection = (colName, items) => {
-        try {
-          localStorage.setItem(storagePrefix + colName, JSON.stringify(items));
-        } catch (e) {
-          console.error("Aviso ao persistir dados na nuvem local:", e);
-        }
-      };
-
-      return {
-        collection: (name) => ({
-          name,
-          async getDocs() {
-            const data = getLocalCollection(name);
-            return {
-              empty: data.length === 0,
-              size: data.length,
-              docs: data.map(item => ({
-                id: item.id,
-                data: () => ({ ...item })
-              }))
-            };
-          },
-          async addDoc(docData) {
-            const items = getLocalCollection(name);
-            const id = 'doc_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 5);
-            const newDoc = { ...docData, id };
-            items.push(newDoc);
-            setLocalCollection(name, items);
-            return { id, data: () => ({ ...newDoc }) };
-          },
-          async updateDoc(id, updateData) {
-            const items = getLocalCollection(name);
-            const index = items.findIndex(d => d.id === id);
-            if (index === -1) throw new Error("Documento não encontrado no Firestore");
-            items[index] = { ...items[index], ...updateData };
-            setLocalCollection(name, items);
-            return items[index];
-          },
-          async deleteDoc(id) {
-            let items = getLocalCollection(name);
-            items = items.filter(d => d.id !== id);
-            setLocalCollection(name, items);
-            return true;
-          }
-        })
-      };
-    };
-
-    const firebase = {
-      initializeApp: (cfg) => ({ config: cfg }),
-      firestore: (app) => createFirestoreClient(app.config)
-    };
-
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore(app);
+    let db = null;
+    try {
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+      console.log("Firebase inicializado");
+    } catch (e) {
+      console.error("Erro ao inicializar Firebase:", e);
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
       try {
@@ -1660,64 +1678,74 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
           if (status === 'online') {
             statusIndicator.style.background = 'rgba(34, 197, 94, 0.25)';
             statusIndicator.style.color = '#dcfce7';
-            statusIndicator.innerHTML = '<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#4ade80;"></span> <span>' + (text || 'Dados salvos na nuvem') + '</span>';
+            statusIndicator.innerHTML = '<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#4ade80;"></span> <span>' + (text || 'Dados salvos na nuvem ✓') + '</span>';
           } else if (status === 'syncing') {
             statusIndicator.style.background = 'rgba(251, 191, 36, 0.25)';
             statusIndicator.style.color = '#fef3c7';
-            statusIndicator.innerHTML = '<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#fbbf24;"></span> <span>' + (text || 'Sincronizando...') + '</span>';
+            statusIndicator.innerHTML = '<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#fbbf24;"></span> <span>' + (text || 'Conectando ao Firebase...') + '</span>';
           } else {
             statusIndicator.style.background = 'rgba(248, 113, 113, 0.25)';
             statusIndicator.style.color = '#fee2e2';
-            statusIndicator.innerHTML = '<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#f87171;"></span> <span>' + (text || 'Modo offline') + '</span>';
+            statusIndicator.innerHTML = '<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#f87171;"></span> <span>' + (text || '⚠ Modo offline — dados apenas neste navegador') + '</span>';
           }
         }
 
-        // CARREGAMENTO & SEMEADURA FIRESTORE
+        // CARREGAMENTO & SEMEADURA FIRESTORE (db.collection("embalagens").get() e db.collection("categorias").get())
         async function loadFirestoreData() {
-          setCloudStatus('syncing', 'Carregando dados na nuvem...');
+          setCloudStatus('syncing', 'Conectando ao Firebase...');
+          if (!db) {
+            console.error("Firestore não inicializado.");
+            setCloudStatus('offline', '⚠ Modo offline — dados apenas neste navegador');
+            embalagens = [...DEFAULT_EMBALAGENS];
+            categorias = [...DEFAULT_CATEGORIAS];
+            return;
+          }
+
           try {
             // 1. Coleção 'embalagens'
-            const embCol = db.collection('embalagens');
-            const embSnapshot = await embCol.getDocs();
+            const embSnapshot = await db.collection("embalagens").get();
 
             if (embSnapshot.empty) {
-              // Semear embalagens padrão
               for (const item of DEFAULT_EMBALAGENS) {
-                await embCol.addDoc({
+                const docRef = await db.collection("embalagens").add({
                   nome: item.nome,
                   valor: item.valor,
                   unidade: item.unidade
                 });
+                console.log("Criou documento padrão embalagem:", item.nome, "com id:", docRef.id);
               }
-              const reSnapshot = await embCol.getDocs();
+              const reSnapshot = await db.collection("embalagens").get();
               embalagens = reSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+              console.log(`Leu ${embalagens.length} embalagens do Firestore`);
             } else {
               embalagens = embSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+              console.log(`Leu ${embalagens.length} embalagens do Firestore`);
             }
 
             // 2. Coleção 'categorias'
-            const catCol = db.collection('categorias');
-            const catSnapshot = await catCol.getDocs();
+            const catSnapshot = await db.collection("categorias").get();
 
             if (catSnapshot.empty) {
-              // Semear categorias padrão
               for (const item of DEFAULT_CATEGORIAS) {
-                await catCol.addDoc({
+                const docRef = await db.collection("categorias").add({
                   nome: item.nome,
                   classico: item.classico,
                   premium: item.premium
                 });
+                console.log("Criou documento padrão categoria:", item.nome, "com id:", docRef.id);
               }
-              const reSnapshotCat = await catCol.getDocs();
+              const reSnapshotCat = await db.collection("categorias").get();
               categorias = reSnapshotCat.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+              console.log(`Leu ${categorias.length} categorias do Firestore`);
             } else {
               categorias = catSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+              console.log(`Leu ${categorias.length} categorias do Firestore`);
             }
 
-            setCloudStatus('online', 'Dados salvos na nuvem');
+            setCloudStatus('online', 'Dados salvos na nuvem ✓');
           } catch (e) {
             console.error('Falha ao conectar com o Firestore:', e);
-            setCloudStatus('offline', 'Modo offline (dados padrão)');
+            setCloudStatus('offline', '⚠ Modo offline — dados apenas neste navegador');
             if (!embalagens.length) embalagens = [...DEFAULT_EMBALAGENS];
             if (!categorias.length) categorias = [...DEFAULT_CATEGORIAS];
           }
@@ -2154,28 +2182,38 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
             return;
           }
           embError.classList.remove('is-visible');
-          setCloudStatus('syncing', 'Salvando embalagem...');
 
-          try {
-            const col = db.collection('embalagens');
-            if (id) {
-              await col.updateDoc(id, { nome, valor, unidade });
-            } else {
-              await col.addDoc({ nome, valor, unidade });
-            }
-
-            const snapshot = await col.getDocs();
-            embalagens = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setCloudStatus('online', 'Dados salvos na nuvem');
-          } catch (err) {
-            console.error('Erro ao salvar embalagem no Firestore:', err);
-            setCloudStatus('offline', 'Erro ao salvar na nuvem');
+          if (!db) {
+            const errMsg = "Firestore não inicializado";
+            console.error(errMsg);
+            setCloudStatus('offline', `Erro ao salvar: ${errMsg}`);
+            return;
           }
 
-          populateEmbalagensDropdown();
-          renderEmbalagensTable();
-          resetEmbForm();
-          calculate();
+          setCloudStatus('syncing', 'Gravando no Firestore...');
+
+          try {
+            if (id) {
+              await db.collection("embalagens").doc(id).update({ nome, valor, unidade });
+              console.log("Atualizado no Firestore com id:", id);
+            } else {
+              const docRef = await db.collection("embalagens").add({ nome, valor, unidade });
+              console.log("Salvo no Firestore com id:", docRef.id);
+            }
+
+            // Só atualiza a interface DEPOIS que o Firestore confirmar
+            const snapshot = await db.collection("embalagens").get();
+            embalagens = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setCloudStatus('online', 'Dados salvos na nuvem ✓');
+
+            populateEmbalagensDropdown();
+            renderEmbalagensTable();
+            resetEmbForm();
+            calculate();
+          } catch (err) {
+            console.error('Erro ao salvar embalagem no Firestore:', err);
+            setCloudStatus('offline', `Erro ao salvar: ${err.message || 'Falha de conexão'}`);
+          }
         });
 
         // Delegação de eventos no corpo da tabela de embalagens
@@ -2207,21 +2245,30 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
             }
             const item = embalagens.find(e => e.id === id);
             if (confirm(`Tem certeza que deseja excluir a embalagem "${item ? item.nome : ''}"?`)) {
-              setCloudStatus('syncing', 'Excluindo embalagem...');
+              if (!db) {
+                console.error("Firestore não inicializado.");
+                setCloudStatus('offline', '⚠ Modo offline — dados apenas neste navegador');
+                return;
+              }
+
+              setCloudStatus('syncing', 'Excluindo do Firestore...');
               try {
-                const col = db.collection('embalagens');
-                await col.deleteDoc(id);
-                const snapshot = await col.getDocs();
+                await db.collection("embalagens").doc(id).delete();
+                console.log("Excluído do Firestore com id:", id);
+
+                // Só atualiza interface após confirmação do Firestore
+                const snapshot = await db.collection("embalagens").get();
                 embalagens = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                setCloudStatus('online', 'Dados salvos na nuvem');
+                setCloudStatus('online', 'Dados salvos na nuvem ✓');
+
+                populateEmbalagensDropdown();
+                renderEmbalagensTable();
+                resetEmbForm();
+                calculate();
               } catch (err) {
                 console.error('Erro ao excluir embalagem no Firestore:', err);
-                setCloudStatus('offline', 'Erro ao sincronizar exclusão');
+                setCloudStatus('offline', `Erro ao salvar: ${err.message || 'Falha ao excluir'}`);
               }
-              populateEmbalagensDropdown();
-              renderEmbalagensTable();
-              resetEmbForm();
-              calculate();
             }
           }
         });
@@ -2285,28 +2332,38 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
             return;
           }
           catError.classList.remove('is-visible');
-          setCloudStatus('syncing', 'Salvando categoria...');
 
-          try {
-            const col = db.collection('categorias');
-            if (id) {
-              await col.updateDoc(id, { nome, classico, premium });
-            } else {
-              await col.addDoc({ nome, classico, premium });
-            }
-
-            const snapshot = await col.getDocs();
-            categorias = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setCloudStatus('online', 'Dados salvos na nuvem');
-          } catch (err) {
-            console.error('Erro ao salvar categoria no Firestore:', err);
-            setCloudStatus('offline', 'Erro ao salvar na nuvem');
+          if (!db) {
+            const errMsg = "Firestore não inicializado";
+            console.error(errMsg);
+            setCloudStatus('offline', `Erro ao salvar: ${errMsg}`);
+            return;
           }
 
-          populateCategoriasDropdown();
-          renderCategoriasTable();
-          resetCatForm();
-          calculate();
+          setCloudStatus('syncing', 'Gravando no Firestore...');
+
+          try {
+            if (id) {
+              await db.collection("categorias").doc(id).update({ nome, classico, premium });
+              console.log("Atualizado no Firestore com id:", id);
+            } else {
+              const docRef = await db.collection("categorias").add({ nome, classico, premium });
+              console.log("Salvo no Firestore com id:", docRef.id);
+            }
+
+            // Só atualiza a interface DEPOIS que o Firestore confirmar
+            const snapshot = await db.collection("categorias").get();
+            categorias = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setCloudStatus('online', 'Dados salvos na nuvem ✓');
+
+            populateCategoriasDropdown();
+            renderCategoriasTable();
+            resetCatForm();
+            calculate();
+          } catch (err) {
+            console.error('Erro ao salvar categoria no Firestore:', err);
+            setCloudStatus('offline', `Erro ao salvar: ${err.message || 'Falha de conexão'}`);
+          }
         });
 
         // Delegação na tabela de categorias
@@ -2338,21 +2395,30 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
             }
             const item = categorias.find(c => c.id === id);
             if (confirm(`Tem certeza que deseja excluir a categoria "${item ? item.nome : ''}"?`)) {
-              setCloudStatus('syncing', 'Excluindo categoria...');
+              if (!db) {
+                console.error("Firestore não inicializado.");
+                setCloudStatus('offline', '⚠ Modo offline — dados apenas neste navegador');
+                return;
+              }
+
+              setCloudStatus('syncing', 'Excluindo do Firestore...');
               try {
-                const col = db.collection('categorias');
-                await col.deleteDoc(id);
-                const snapshot = await col.getDocs();
+                await db.collection("categorias").doc(id).delete();
+                console.log("Excluído do Firestore com id:", id);
+
+                // Só atualiza interface após confirmação do Firestore
+                const snapshot = await db.collection("categorias").get();
                 categorias = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                setCloudStatus('online', 'Dados salvos na nuvem');
+                setCloudStatus('online', 'Dados salvos na nuvem ✓');
+
+                populateCategoriasDropdown();
+                renderCategoriasTable();
+                resetCatForm();
+                calculate();
               } catch (err) {
                 console.error('Erro ao excluir categoria no Firestore:', err);
-                setCloudStatus('offline', 'Erro ao sincronizar exclusão');
+                setCloudStatus('offline', `Erro ao salvar: ${err.message || 'Falha ao excluir'}`);
               }
-              populateCategoriasDropdown();
-              renderCategoriasTable();
-              resetCatForm();
-              calculate();
             }
           }
         });
