@@ -1024,6 +1024,180 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
       }
     }
 
+    /* PAINEL DE DIAGNÓSTICO VISÍVEL */
+    .diagnostic-card {
+      background: #ffffff;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 12px;
+      margin-bottom: 1.75rem;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+      overflow: hidden;
+      transition: all 0.2s ease;
+    }
+
+    .diagnostic-header {
+      background: #f1f5f9;
+      padding: 0.85rem 1.15rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      border-bottom: 1px solid #cbd5e1;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .diagnostic-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    .diagnostic-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #0f2a5c;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    .diagnostic-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-diag {
+      padding: 0.35rem 0.7rem;
+      font-size: 0.76rem;
+      font-weight: 600;
+      border-radius: 6px;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      color: #334155;
+      transition: all 0.15s ease;
+      touch-action: manipulation;
+    }
+
+    .btn-diag:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+
+    .btn-diag-test {
+      background: #1e4d8c;
+      color: #ffffff;
+      border-color: #1e4d8c;
+    }
+
+    .btn-diag-test:hover {
+      background: #153a6b;
+      color: #ffffff;
+    }
+
+    .diagnostic-body {
+      padding: 1rem 1.15rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      background: #ffffff;
+    }
+
+    .diagnostic-body.is-hidden {
+      display: none;
+    }
+
+    .diag-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      padding-bottom: 0.65rem;
+      border-bottom: 1px dashed #e2e8f0;
+    }
+
+    .diag-item:last-of-type {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .diag-line {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.55rem;
+      font-size: 0.84rem;
+      line-height: 1.45;
+    }
+
+    .diag-label {
+      font-weight: 600;
+      color: #334155;
+      min-width: 175px;
+      flex-shrink: 0;
+    }
+
+    .diag-state {
+      flex: 1;
+      word-break: break-word;
+    }
+
+    .diag-status-ok {
+      color: #15803d;
+      font-weight: 600;
+    }
+
+    .diag-status-error {
+      color: #b91c1c;
+      font-weight: 600;
+    }
+
+    .diag-status-info {
+      color: #475569;
+    }
+
+    .diag-error-box {
+      margin-top: 0.35rem;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 6px;
+      padding: 0.45rem 0.65rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.76rem;
+      color: #991b1b;
+      word-break: break-all;
+      white-space: pre-wrap;
+    }
+
+    .diag-test-result {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 0.55rem 0.75rem;
+      font-size: 0.8rem;
+      color: #1e293b;
+      margin-top: 0.25rem;
+      display: none;
+    }
+
+    .diag-test-result.is-visible {
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      .diag-line {
+        flex-direction: column;
+        gap: 0.15rem;
+      }
+      .diag-label {
+        min-width: unset;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1064,6 +1238,72 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
   </header>
 
   <main class="shell-container">
+
+    <!-- PAINEL DE DIAGNÓSTICO VISÍVEL -->
+    <section class="diagnostic-card" id="diagnostic-panel" aria-label="Painel de Diagnóstico do Firestore">
+      <div class="diagnostic-header" id="diagnostic-header-toggle" title="Clique para expandir ou recolher o painel">
+        <div class="diagnostic-title-wrap">
+          <h2 class="diagnostic-title">
+            <span>🔍</span>
+            <span>Painel de Diagnóstico Firebase Firestore</span>
+          </h2>
+          <span id="diagnostic-global-badge" style="font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; background: #fef3c7; color: #92400e;">
+            Verificando...
+          </span>
+        </div>
+        <div class="diagnostic-actions" onclick="event.stopPropagation();">
+          <button type="button" class="btn-diag btn-diag-test" id="btn-diag-test" title="Executar teste completo de leitura e gravação no Firestore">
+            <span>⚡</span>
+            <span>Testar conexão</span>
+          </button>
+          <button type="button" class="btn-diag" id="btn-diag-toggle" aria-expanded="true" title="Alternar visibilidade do painel">
+            <span id="diag-toggle-icon">▲</span>
+            <span id="diag-toggle-text">Ocultar</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="diagnostic-body" id="diagnostic-body">
+        <!-- 1. SDK Firebase carregado -->
+        <div class="diag-item">
+          <div class="diag-line">
+            <span class="diag-label">SDK Firebase carregado:</span>
+            <span class="diag-state" id="diag-step-sdk">⏳ Analisando objeto global firebase...</span>
+          </div>
+          <div class="diag-error-box" id="diag-sdk-error" style="display: none;"></div>
+        </div>
+
+        <!-- 2. Firebase inicializado -->
+        <div class="diag-item">
+          <div class="diag-line">
+            <span class="diag-label">Firebase inicializado:</span>
+            <span class="diag-state" id="diag-step-init">⏳ Aguardando verificação...</span>
+          </div>
+          <div class="diag-error-box" id="diag-init-error" style="display: none;"></div>
+        </div>
+
+        <!-- 3. Conexão com Firestore -->
+        <div class="diag-item">
+          <div class="diag-line">
+            <span class="diag-label">Conexão com Firestore:</span>
+            <span class="diag-state" id="diag-step-conn">⏳ Lendo coleções (embalagens e categorias)...</span>
+          </div>
+          <div class="diag-error-box" id="diag-conn-error" style="display: none;"></div>
+        </div>
+
+        <!-- 4. Última operação de gravação -->
+        <div class="diag-item">
+          <div class="diag-line">
+            <span class="diag-label">Última gravação:</span>
+            <span class="diag-state" id="diag-step-write">ℹ️ Nenhuma gravação efetuada nesta sessão</span>
+          </div>
+          <div class="diag-error-box" id="diag-write-error" style="display: none;"></div>
+        </div>
+
+        <!-- Feedback do botão Testar conexão -->
+        <div class="diag-test-result" id="diag-test-result"></div>
+      </div>
+    </section>
 
     <!-- SEÇÃO: COMO FUNCIONA -->
     <section class="how-it-works-section" id="como-funciona">
@@ -1511,86 +1751,6 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
 
   <!-- APLICAÇÃO JS -->
   <script>
-    // Camada compatível Firebase Firestore (API Compat Oficial v8/v9/v10 compat: collection, get, add, doc().update, doc().delete)
-    // Permite execução sem dependência externa não autorizada e com persistência resiliente
-    window.firebase = window.firebase || (() => {
-      const storagePrefix = 'firestore_db_';
-      const readStore = (col) => {
-        try {
-          const raw = localStorage.getItem(storagePrefix + col);
-          return raw ? JSON.parse(raw) : null;
-        } catch (e) {
-          console.error("Erro ao ler dados da coleção:", e);
-          return null;
-        }
-      };
-      const writeStore = (col, data) => {
-        try {
-          localStorage.setItem(storagePrefix + col, JSON.stringify(data));
-        } catch (e) {
-          console.error("Erro ao salvar dados no storage:", e);
-          throw e;
-        }
-      };
-
-      return {
-        initializeApp: (config) => {
-          window._firebaseConfig = config;
-          return { name: '[DEFAULT]', options: config };
-        },
-        firestore: () => ({
-          collection: (colName) => ({
-            get: async () => {
-              const list = readStore(colName);
-              if (list === null) {
-                return {
-                  empty: true,
-                  size: 0,
-                  docs: [],
-                  forEach: function(fn) { this.docs.forEach(fn); }
-                };
-              }
-              return {
-                empty: list.length === 0,
-                size: list.length,
-                docs: list.map(item => ({
-                  id: item.id,
-                  data: () => ({ ...item })
-                })),
-                forEach: function(fn) { this.docs.forEach(fn); }
-              };
-            },
-            add: async (docData) => {
-              const list = readStore(colName) || [];
-              const id = 'fs_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 7);
-              const record = { id, ...docData };
-              list.push(record);
-              writeStore(colName, list);
-              return { id };
-            },
-            doc: (docId) => ({
-              update: async (patch) => {
-                const list = readStore(colName) || [];
-                const idx = list.findIndex(d => d.id === docId);
-                if (idx === -1) {
-                  throw new Error(`Documento '${docId}' não encontrado em ${colName}`);
-                }
-                list[idx] = { ...list[idx], ...patch };
-                writeStore(colName, list);
-                return true;
-              },
-              delete: async () => {
-                let list = readStore(colName) || [];
-                list = list.filter(d => d.id !== docId);
-                writeStore(colName, list);
-                return true;
-              }
-            })
-          })
-        })
-      };
-    })();
-
     // Configuração oficial do Firebase Firestore
     const firebaseConfig = {
       apiKey: "AIzaSyCB7V9AoZ1fY-Rc-6g8IVnEa2wW6YF6Qfo",
@@ -1601,13 +1761,148 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
       appId: "1:574777921169:web:e3e82d88a9da8f14f67930"
     };
 
+    // Estado do Diagnóstico da Conexão
+    const diagState = {
+      sdkOk: false,
+      sdkMsg: '',
+      sdkErr: null,
+      initOk: false,
+      initMsg: '',
+      initErr: null,
+      connOk: false,
+      connMsg: '',
+      connErr: null,
+      writeOk: null, // null = sem gravação, true = sucesso, false = erro
+      writeMsg: 'ℹ️ Nenhuma gravação efetuada nesta sessão',
+      writeErr: null
+    };
+
     let db = null;
+
+    // Helper para extrair código e mensagem detalhada de erros
+    function extractErrorInfo(err) {
+      if (!err) return { code: '', message: 'Erro desconhecido' };
+      const code = err.code || (err.name && err.name !== 'Error' ? err.name : '');
+      const message = err.message || String(err);
+      return { code, message, full: code ? `[${code}] ${message}` : message };
+    }
+
+    // Atualização visual do painel de diagnóstico
+    function updateDiagnosticUI() {
+      const stepSdk = document.getElementById('diag-step-sdk');
+      const errSdk = document.getElementById('diag-sdk-error');
+      const stepInit = document.getElementById('diag-step-init');
+      const errInit = document.getElementById('diag-init-error');
+      const stepConn = document.getElementById('diag-step-conn');
+      const errConn = document.getElementById('diag-conn-error');
+      const stepWrite = document.getElementById('diag-step-write');
+      const errWrite = document.getElementById('diag-write-error');
+      const globalBadge = document.getElementById('diagnostic-global-badge');
+
+      if (stepSdk) {
+        if (diagState.sdkOk) {
+          stepSdk.innerHTML = `<span class="diag-status-ok">✅ ${escapeHtml(diagState.sdkMsg)}</span>`;
+          if (errSdk) errSdk.style.display = 'none';
+        } else {
+          stepSdk.innerHTML = `<span class="diag-status-error">❌ ${escapeHtml(diagState.sdkMsg || 'SDK Firebase NÃO carregou — verifique sua internet ou bloqueador de scripts')}</span>`;
+          if (errSdk && diagState.sdkErr) {
+            errSdk.textContent = diagState.sdkErr.full;
+            errSdk.style.display = 'block';
+          }
+        }
+      }
+
+      if (stepInit) {
+        if (diagState.initOk) {
+          stepInit.innerHTML = `<span class="diag-status-ok">✅ ${escapeHtml(diagState.initMsg)}</span>`;
+          if (errInit) errInit.style.display = 'none';
+        } else {
+          stepInit.innerHTML = `<span class="diag-status-error">❌ ${escapeHtml(diagState.initMsg || 'Falha na inicialização do Firebase')}</span>`;
+          if (errInit && diagState.initErr) {
+            errInit.textContent = diagState.initErr.full;
+            errInit.style.display = 'block';
+          }
+        }
+      }
+
+      if (stepConn) {
+        if (diagState.connOk) {
+          stepConn.innerHTML = `<span class="diag-status-ok">✅ ${escapeHtml(diagState.connMsg)}</span>`;
+          if (errConn) errConn.style.display = 'none';
+        } else {
+          stepConn.innerHTML = `<span class="diag-status-error">❌ ${escapeHtml(diagState.connMsg || 'Falha ao conectar com coleções do Firestore')}</span>`;
+          if (errConn && diagState.connErr) {
+            errConn.textContent = diagState.connErr.full;
+            errConn.style.display = 'block';
+          }
+        }
+      }
+
+      if (stepWrite) {
+        if (diagState.writeOk === true) {
+          stepWrite.innerHTML = `<span class="diag-status-ok">✅ ${escapeHtml(diagState.writeMsg)}</span>`;
+          if (errWrite) errWrite.style.display = 'none';
+        } else if (diagState.writeOk === false) {
+          stepWrite.innerHTML = `<span class="diag-status-error">❌ ${escapeHtml(diagState.writeMsg)}</span>`;
+          if (errWrite && diagState.writeErr) {
+            errWrite.textContent = diagState.writeErr.full;
+            errWrite.style.display = 'block';
+          }
+        } else {
+          stepWrite.innerHTML = `<span class="diag-status-info">${escapeHtml(diagState.writeMsg)}</span>`;
+          if (errWrite) errWrite.style.display = 'none';
+        }
+      }
+
+      if (globalBadge) {
+        if (diagState.connOk) {
+          globalBadge.style.background = '#dcfce7';
+          globalBadge.style.color = '#15803d';
+          globalBadge.textContent = 'Conectado ✓';
+        } else if (!diagState.sdkOk) {
+          globalBadge.style.background = '#fee2e2';
+          globalBadge.style.color = '#b91c1c';
+          globalBadge.textContent = 'SDK Ausente';
+        } else {
+          globalBadge.style.background = '#fee2e2';
+          globalBadge.style.color = '#b91c1c';
+          globalBadge.textContent = 'Erro de Conexão';
+        }
+      }
+    }
+
+    // Inicialização do Firebase com verificação estrita
     try {
-      firebase.initializeApp(firebaseConfig);
-      db = firebase.firestore();
-      console.log("Firebase inicializado");
-    } catch (e) {
-      console.error("Erro ao inicializar Firebase:", e);
+      if (typeof firebase === 'undefined') {
+        diagState.sdkOk = false;
+        diagState.sdkMsg = 'SDK Firebase NÃO carregou — verifique sua internet ou bloqueador de scripts';
+        diagState.sdkErr = { code: 'SDK_NOT_FOUND', message: 'Objeto global "firebase" não encontrado (typeof firebase === "undefined")', full: '[SDK_NOT_FOUND] Objeto global "firebase" não encontrado' };
+        diagState.initOk = false;
+        diagState.initMsg = 'Firebase não pôde ser inicializado pois o SDK não existe';
+        diagState.connOk = false;
+        diagState.connMsg = 'Firestore inacessível — ativado modo de contingência em memória';
+        console.warn('SDK Firebase não encontrado no escopo global. Operando em modo offline.');
+      } else {
+        diagState.sdkOk = true;
+        diagState.sdkMsg = `SDK Firebase compat carregado com sucesso (v${firebase.SDK_VERSION || 'compat'})`;
+        try {
+          const app = !firebase.apps || !firebase.apps.length ? firebase.initializeApp(firebaseConfig) : firebase.app();
+          db = firebase.firestore();
+          diagState.initOk = true;
+          diagState.initMsg = `Firebase inicializado com sucesso (Projeto: ${firebaseConfig.projectId})`;
+          console.log("Firebase inicializado:", app.name);
+        } catch (initErr) {
+          diagState.initOk = false;
+          diagState.initErr = extractErrorInfo(initErr);
+          diagState.initMsg = `Erro na inicialização: ${diagState.initErr.full}`;
+          console.error("Erro ao inicializar Firebase:", initErr);
+        }
+      }
+    } catch (outerErr) {
+      diagState.sdkOk = false;
+      diagState.sdkErr = extractErrorInfo(outerErr);
+      diagState.sdkMsg = `Falha ao carregar SDK: ${diagState.sdkErr.full}`;
+      console.error("Erro fatal no SDK Firebase:", outerErr);
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -1694,58 +1989,89 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
         async function loadFirestoreData() {
           setCloudStatus('syncing', 'Conectando ao Firebase...');
           if (!db) {
-            console.error("Firestore não inicializado.");
-            setCloudStatus('offline', '⚠ Modo offline — dados apenas neste navegador');
+            diagState.connOk = false;
+            const reason = !diagState.sdkOk ? 'SDK Firebase indisponível' : 'Objeto db do Firestore não inicializado';
+            diagState.connMsg = `Firestore não conectado (${reason}) — ativado modo offline`;
+            diagState.connErr = diagState.initErr || diagState.sdkErr || { code: 'UNAVAILABLE', message: reason, full: `[UNAVAILABLE] ${reason}` };
+            setCloudStatus('offline', '⚠ Modo offline — dados em memória');
             embalagens = [...DEFAULT_EMBALAGENS];
             categorias = [...DEFAULT_CATEGORIAS];
+            updateDiagnosticUI();
             return;
           }
 
           try {
             // 1. Coleção 'embalagens'
-            const embSnapshot = await db.collection("embalagens").get();
+            let embSnapshot;
+            try {
+              embSnapshot = await db.collection("embalagens").get();
+            } catch (errEmb) {
+              const errInfo = extractErrorInfo(errEmb);
+              diagState.connOk = false;
+              diagState.connErr = errInfo;
+              diagState.connMsg = `Erro ao ler coleção "embalagens": ${errInfo.full}`;
+              console.error("Erro ao ler coleção 'embalagens':", errEmb);
+              throw errEmb;
+            }
 
             if (embSnapshot.empty) {
+              console.log("Coleção embalagens vazia. Realizando semeadura inicial...");
               for (const item of DEFAULT_EMBALAGENS) {
-                const docRef = await db.collection("embalagens").add({
+                await db.collection("embalagens").add({
                   nome: item.nome,
                   valor: item.valor,
                   unidade: item.unidade
                 });
-                console.log("Criou documento padrão embalagem:", item.nome, "com id:", docRef.id);
               }
               const reSnapshot = await db.collection("embalagens").get();
               embalagens = reSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-              console.log(`Leu ${embalagens.length} embalagens do Firestore`);
             } else {
               embalagens = embSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-              console.log(`Leu ${embalagens.length} embalagens do Firestore`);
             }
 
             // 2. Coleção 'categorias'
-            const catSnapshot = await db.collection("categorias").get();
+            let catSnapshot;
+            try {
+              catSnapshot = await db.collection("categorias").get();
+            } catch (errCat) {
+              const errInfo = extractErrorInfo(errCat);
+              diagState.connOk = false;
+              diagState.connErr = errInfo;
+              diagState.connMsg = `Erro ao ler coleção "categorias": ${errInfo.full}`;
+              console.error("Erro ao ler coleção 'categorias':", errCat);
+              throw errCat;
+            }
 
             if (catSnapshot.empty) {
+              console.log("Coleção categorias vazia. Realizando semeadura inicial...");
               for (const item of DEFAULT_CATEGORIAS) {
-                const docRef = await db.collection("categorias").add({
+                await db.collection("categorias").add({
                   nome: item.nome,
                   classico: item.classico,
                   premium: item.premium
                 });
-                console.log("Criou documento padrão categoria:", item.nome, "com id:", docRef.id);
               }
               const reSnapshotCat = await db.collection("categorias").get();
               categorias = reSnapshotCat.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-              console.log(`Leu ${categorias.length} categorias do Firestore`);
             } else {
               categorias = catSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-              console.log(`Leu ${categorias.length} categorias do Firestore`);
             }
 
+            diagState.connOk = true;
+            diagState.connErr = null;
+            diagState.connMsg = `Conexão bem-sucedida: ${embalagens.length} embalagens, ${categorias.length} categorias lidas`;
             setCloudStatus('online', 'Dados salvos na nuvem ✓');
+            updateDiagnosticUI();
+
           } catch (e) {
-            console.error('Falha ao conectar com o Firestore:', e);
-            setCloudStatus('offline', '⚠ Modo offline — dados apenas neste navegador');
+            const errInfo = extractErrorInfo(e);
+            console.error('Falha de leitura no Firestore:', e);
+            diagState.connOk = false;
+            diagState.connErr = errInfo;
+            diagState.connMsg = `Falha na leitura: ${errInfo.full}`;
+            setCloudStatus('offline', `Erro Firestore: ${errInfo.message}`);
+            updateDiagnosticUI();
+
             if (!embalagens.length) embalagens = [...DEFAULT_EMBALAGENS];
             if (!categorias.length) categorias = [...DEFAULT_CATEGORIAS];
           }
@@ -2184,35 +2510,66 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
           embError.classList.remove('is-visible');
 
           if (!db) {
-            const errMsg = "Firestore não inicializado";
+            const errMsg = "Firestore não inicializado (SDK indisponível)";
             console.error(errMsg);
+            diagState.writeOk = false;
+            diagState.writeMsg = `Falha na gravação de embalagem: ${errMsg}`;
+            diagState.writeErr = { code: 'NO_FIRESTORE', message: errMsg, full: `[NO_FIRESTORE] ${errMsg}` };
             setCloudStatus('offline', `Erro ao salvar: ${errMsg}`);
+            updateDiagnosticUI();
+
+            // Fallback em memória local quando não há Firebase
+            if (id) {
+              const idx = embalagens.findIndex(e => e.id === id);
+              if (idx !== -1) embalagens[idx] = { id, nome, valor, unidade };
+            } else {
+              const localId = 'loc_' + Date.now();
+              embalagens.push({ id: localId, nome, valor, unidade });
+            }
+            populateEmbalagensDropdown();
+            renderEmbalagensTable();
+            resetEmbForm();
+            calculate();
             return;
           }
 
           setCloudStatus('syncing', 'Gravando no Firestore...');
 
           try {
+            let savedId = id;
             if (id) {
               await db.collection("embalagens").doc(id).update({ nome, valor, unidade });
               console.log("Atualizado no Firestore com id:", id);
+              diagState.writeOk = true;
+              diagState.writeMsg = `Salvo no Firestore (id: ${id}, ação: atualização embalagem "${nome}")`;
+              diagState.writeErr = null;
             } else {
               const docRef = await db.collection("embalagens").add({ nome, valor, unidade });
+              savedId = docRef.id;
               console.log("Salvo no Firestore com id:", docRef.id);
+              diagState.writeOk = true;
+              diagState.writeMsg = `Salvo no Firestore (id: ${docRef.id}, ação: criação embalagem "${nome}")`;
+              diagState.writeErr = null;
             }
 
-            // Só atualiza a interface DEPOIS que o Firestore confirmar
+            // Confirmação do Firestore antes de atualizar interface
             const snapshot = await db.collection("embalagens").get();
             embalagens = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setCloudStatus('online', 'Dados salvos na nuvem ✓');
+            updateDiagnosticUI();
 
             populateEmbalagensDropdown();
             renderEmbalagensTable();
             resetEmbForm();
             calculate();
           } catch (err) {
+            const errInfo = extractErrorInfo(err);
             console.error('Erro ao salvar embalagem no Firestore:', err);
-            setCloudStatus('offline', `Erro ao salvar: ${err.message || 'Falha de conexão'}`);
+            diagState.writeOk = false;
+            diagState.writeMsg = `Falha ao salvar embalagem "${nome}": ${errInfo.full}`;
+            diagState.writeErr = errInfo;
+            setCloudStatus('offline', `Erro ao salvar: ${errInfo.message}`);
+            updateDiagnosticUI();
           }
         });
 
@@ -2246,8 +2603,15 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
             const item = embalagens.find(e => e.id === id);
             if (confirm(`Tem certeza que deseja excluir a embalagem "${item ? item.nome : ''}"?`)) {
               if (!db) {
-                console.error("Firestore não inicializado.");
-                setCloudStatus('offline', '⚠ Modo offline — dados apenas neste navegador');
+                console.warn("Firestore não inicializado. Excluindo apenas em memória.");
+                diagState.writeOk = false;
+                diagState.writeMsg = `Excluído apenas em memória local (Firestore indisponível)`;
+                diagState.writeErr = { code: 'NO_FIRESTORE', message: 'Sem conexão com Firestore', full: '[NO_FIRESTORE] Sem conexão com Firestore' };
+                embalagens = embalagens.filter(e => e.id !== id);
+                populateEmbalagensDropdown();
+                renderEmbalagensTable();
+                calculate();
+                updateDiagnosticUI();
                 return;
               }
 
@@ -2256,18 +2620,28 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
                 await db.collection("embalagens").doc(id).delete();
                 console.log("Excluído do Firestore com id:", id);
 
+                diagState.writeOk = true;
+                diagState.writeMsg = `Excluído do Firestore com sucesso (id: ${id})`;
+                diagState.writeErr = null;
+
                 // Só atualiza interface após confirmação do Firestore
                 const snapshot = await db.collection("embalagens").get();
                 embalagens = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 setCloudStatus('online', 'Dados salvos na nuvem ✓');
+                updateDiagnosticUI();
 
                 populateEmbalagensDropdown();
                 renderEmbalagensTable();
                 resetEmbForm();
                 calculate();
               } catch (err) {
+                const errInfo = extractErrorInfo(err);
                 console.error('Erro ao excluir embalagem no Firestore:', err);
-                setCloudStatus('offline', `Erro ao salvar: ${err.message || 'Falha ao excluir'}`);
+                diagState.writeOk = false;
+                diagState.writeMsg = `Falha ao excluir embalagem: ${errInfo.full}`;
+                diagState.writeErr = errInfo;
+                setCloudStatus('offline', `Erro ao salvar: ${errInfo.message}`);
+                updateDiagnosticUI();
               }
             }
           }
@@ -2334,9 +2708,26 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
           catError.classList.remove('is-visible');
 
           if (!db) {
-            const errMsg = "Firestore não inicializado";
+            const errMsg = "Firestore não inicializado (SDK indisponível)";
             console.error(errMsg);
+            diagState.writeOk = false;
+            diagState.writeMsg = `Falha na gravação de categoria: ${errMsg}`;
+            diagState.writeErr = { code: 'NO_FIRESTORE', message: errMsg, full: `[NO_FIRESTORE] ${errMsg}` };
             setCloudStatus('offline', `Erro ao salvar: ${errMsg}`);
+            updateDiagnosticUI();
+
+            // Fallback em memória local quando não há Firebase
+            if (id) {
+              const idx = categorias.findIndex(c => c.id === id);
+              if (idx !== -1) categorias[idx] = { id, nome, classico, premium };
+            } else {
+              const localId = 'loc_' + Date.now();
+              categorias.push({ id: localId, nome, classico, premium });
+            }
+            populateCategoriasDropdown();
+            renderCategoriasTable();
+            resetCatForm();
+            calculate();
             return;
           }
 
@@ -2346,23 +2737,35 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
             if (id) {
               await db.collection("categorias").doc(id).update({ nome, classico, premium });
               console.log("Atualizado no Firestore com id:", id);
+              diagState.writeOk = true;
+              diagState.writeMsg = `Salvo no Firestore (id: ${id}, ação: atualização categoria "${nome}")`;
+              diagState.writeErr = null;
             } else {
               const docRef = await db.collection("categorias").add({ nome, classico, premium });
               console.log("Salvo no Firestore com id:", docRef.id);
+              diagState.writeOk = true;
+              diagState.writeMsg = `Salvo no Firestore (id: ${docRef.id}, ação: criação categoria "${nome}")`;
+              diagState.writeErr = null;
             }
 
-            // Só atualiza a interface DEPOIS que o Firestore confirmar
+            // Confirmação do Firestore antes de atualizar interface
             const snapshot = await db.collection("categorias").get();
             categorias = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setCloudStatus('online', 'Dados salvos na nuvem ✓');
+            updateDiagnosticUI();
 
             populateCategoriasDropdown();
             renderCategoriasTable();
             resetCatForm();
             calculate();
           } catch (err) {
+            const errInfo = extractErrorInfo(err);
             console.error('Erro ao salvar categoria no Firestore:', err);
-            setCloudStatus('offline', `Erro ao salvar: ${err.message || 'Falha de conexão'}`);
+            diagState.writeOk = false;
+            diagState.writeMsg = `Falha ao salvar categoria "${nome}": ${errInfo.full}`;
+            diagState.writeErr = errInfo;
+            setCloudStatus('offline', `Erro ao salvar: ${errInfo.message}`);
+            updateDiagnosticUI();
           }
         });
 
@@ -2396,8 +2799,15 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
             const item = categorias.find(c => c.id === id);
             if (confirm(`Tem certeza que deseja excluir a categoria "${item ? item.nome : ''}"?`)) {
               if (!db) {
-                console.error("Firestore não inicializado.");
-                setCloudStatus('offline', '⚠ Modo offline — dados apenas neste navegador');
+                console.warn("Firestore não inicializado. Excluindo categoria em memória.");
+                diagState.writeOk = false;
+                diagState.writeMsg = `Excluído apenas em memória local (Firestore indisponível)`;
+                diagState.writeErr = { code: 'NO_FIRESTORE', message: 'Sem conexão com Firestore', full: '[NO_FIRESTORE] Sem conexão com Firestore' };
+                categorias = categorias.filter(c => c.id !== id);
+                populateCategoriasDropdown();
+                renderCategoriasTable();
+                calculate();
+                updateDiagnosticUI();
                 return;
               }
 
@@ -2406,18 +2816,28 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
                 await db.collection("categorias").doc(id).delete();
                 console.log("Excluído do Firestore com id:", id);
 
+                diagState.writeOk = true;
+                diagState.writeMsg = `Excluído do Firestore com sucesso (id: ${id})`;
+                diagState.writeErr = null;
+
                 // Só atualiza interface após confirmação do Firestore
                 const snapshot = await db.collection("categorias").get();
                 categorias = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 setCloudStatus('online', 'Dados salvos na nuvem ✓');
+                updateDiagnosticUI();
 
                 populateCategoriasDropdown();
                 renderCategoriasTable();
                 resetCatForm();
                 calculate();
               } catch (err) {
+                const errInfo = extractErrorInfo(err);
                 console.error('Erro ao excluir categoria no Firestore:', err);
-                setCloudStatus('offline', `Erro ao salvar: ${err.message || 'Falha ao excluir'}`);
+                diagState.writeOk = false;
+                diagState.writeMsg = `Falha ao excluir categoria: ${errInfo.full}`;
+                diagState.writeErr = errInfo;
+                setCloudStatus('offline', `Erro ao salvar: ${errInfo.message}`);
+                updateDiagnosticUI();
               }
             }
           }
@@ -2453,6 +2873,138 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
             }[m];
           });
         }
+
+        // ==========================================
+        // BOTÃO E LÓGICA DO TESTE DE CONEXÃO
+        // ==========================================
+        const btnDiagTest = document.getElementById('btn-diag-test');
+        const diagTestResult = document.getElementById('diag-test-result');
+
+        async function executeDiagnosticTest() {
+          if (!diagTestResult) return;
+          diagTestResult.className = 'diag-test-result is-visible';
+          diagTestResult.style.background = '#f8fafc';
+          diagTestResult.style.borderColor = '#cbd5e1';
+          diagTestResult.innerHTML = `<strong>🔄 Executando teste de conexão...</strong><br>
+            • Etapa 1: Validando presença do SDK global...<br>
+            • Etapa 2: Testando leitura e gravação no Firestore...`;
+
+          if (typeof firebase === 'undefined') {
+            diagTestResult.style.background = '#fef2f2';
+            diagTestResult.style.borderColor = '#fca5a5';
+            diagTestResult.innerHTML = `
+              <strong style="color:#b91c1c;">❌ Falha no teste de conexão:</strong><br>
+              O objeto global <code>firebase</code> não existe (typeof firebase === "undefined").<br>
+              <span style="color:#7f1d1d; font-size:0.75rem;">Causa provável: os scripts do Firebase não foram carregados pelo navegador, bloqueador de scripts ativo ou restrição de rede externa. O simulador está operando com fallback em memória.</span>
+            `;
+            diagState.sdkOk = false;
+            diagState.sdkMsg = 'SDK Firebase NÃO carregou — verifique sua internet ou bloqueador de scripts';
+            diagState.sdkErr = { code: 'SDK_NOT_LOADED', message: 'typeof firebase === "undefined"', full: '[SDK_NOT_LOADED] typeof firebase === "undefined"' };
+            updateDiagnosticUI();
+            return;
+          }
+
+          if (!db) {
+            diagTestResult.style.background = '#fef2f2';
+            diagTestResult.style.borderColor = '#fca5a5';
+            diagTestResult.innerHTML = `
+              <strong style="color:#b91c1c;">❌ Falha no teste de conexão:</strong><br>
+              O Firestore não está inicializado.<br>
+              <span style="color:#7f1d1d; font-size:0.75rem;">${diagState.initErr ? escapeHtml(diagState.initErr.full) : 'Execute firebase.initializeApp(firebaseConfig)'}</span>
+            `;
+            return;
+          }
+
+          try {
+            const startTimestamp = Date.now();
+            // 1. Teste de Leitura
+            const pingSnapshot = await db.collection("embalagens").limit(1).get();
+            const readLatency = Date.now() - startTimestamp;
+
+            // 2. Teste de Gravação na coleção "teste"
+            const writeStart = Date.now();
+            const testPayload = {
+              origem: 'painel_diagnostico_ewm',
+              timestamp: Date.now(),
+              dataIso: new Date().toISOString()
+            };
+            const docRef = await db.collection("teste").add(testPayload);
+            const writeLatency = Date.now() - writeStart;
+
+            // 3. Teste de Exclusão do documento temporário
+            await db.collection("teste").doc(docRef.id).delete();
+
+            // Atualiza status de sucesso
+            diagState.connOk = true;
+            diagState.connMsg = `Conexão ativa e verificada (latência leitura: ${readLatency}ms, gravação: ${writeLatency}ms)`;
+            diagState.connErr = null;
+            diagState.writeOk = true;
+            diagState.writeMsg = `Salvo no Firestore (id: ${docRef.id}, teste completado com sucesso)`;
+            diagState.writeErr = null;
+
+            diagTestResult.style.background = '#f0fdf4';
+            diagTestResult.style.borderColor = '#86efac';
+            diagTestResult.innerHTML = `
+              <strong style="color:#15803d;">✅ Teste de conexão realizado com SUCESSO!</strong><br>
+              • <strong>Leitura:</strong> Coleção "embalagens" respondeu em ${readLatency}ms.<br>
+              • <strong>Gravação de teste:</strong> Documento criado na coleção <code>teste</code> com ID <code>${docRef.id}</code> em ${writeLatency}ms.<br>
+              • <strong>Exclusão de teste:</strong> Documento temporário removido com sucesso.<br>
+              • <strong>Status:</strong> Conexão e permissões de leitura/escrita do Firestore estão 100% funcionais!
+            `;
+            updateDiagnosticUI();
+          } catch (testErr) {
+            const errInfo = extractErrorInfo(testErr);
+            console.error("Erro durante o teste de conexão:", testErr);
+
+            diagState.connOk = false;
+            diagState.connErr = errInfo;
+            diagState.connMsg = `Erro no teste Firestore: ${errInfo.full}`;
+
+            diagTestResult.style.background = '#fef2f2';
+            diagTestResult.style.borderColor = '#fca5a5';
+            diagTestResult.innerHTML = `
+              <strong style="color:#b91c1c;">❌ Falha durante o teste de Firestore:</strong><br>
+              • <strong>Código do erro:</strong> <code>${escapeHtml(errInfo.code || 'sem código')}</code><br>
+              • <strong>Mensagem detalhada:</strong> ${escapeHtml(errInfo.message)}<br>
+              <div style="margin-top:6px; font-size:0.75rem; color:#7f1d1d;">
+                ${errInfo.code === 'permission-denied' ? '👉 Verifique as Regras de Segurança (Firestore Rules) no console do Firebase para permitir leitura e escrita.' : '👉 Verifique a conectividade de rede, chaves de API e se a coleção está acessível.'}
+              </div>
+            `;
+            updateDiagnosticUI();
+          }
+        }
+
+        if (btnDiagTest) {
+          btnDiagTest.addEventListener('click', executeDiagnosticTest);
+        }
+
+        // Alternância de visibilidade do painel de diagnóstico
+        const diagHeaderToggle = document.getElementById('diagnostic-header-toggle');
+        const diagBody = document.getElementById('diagnostic-body');
+        const btnDiagToggle = document.getElementById('btn-diag-toggle');
+        const diagToggleIcon = document.getElementById('diag-toggle-icon');
+        const diagToggleText = document.getElementById('diag-toggle-text');
+
+        function toggleDiagnosticPanel() {
+          if (!diagBody) return;
+          const isHidden = diagBody.classList.toggle('is-hidden');
+          if (diagToggleIcon) diagToggleIcon.textContent = isHidden ? '▼' : '▲';
+          if (diagToggleText) diagToggleText.textContent = isHidden ? 'Expandir' : 'Ocultar';
+          if (btnDiagToggle) btnDiagToggle.setAttribute('aria-expanded', !isHidden);
+        }
+
+        if (diagHeaderToggle) {
+          diagHeaderToggle.addEventListener('click', toggleDiagnosticPanel);
+        }
+        if (btnDiagToggle) {
+          btnDiagToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleDiagnosticPanel();
+          });
+        }
+
+        // Renderiza diagnóstico inicial
+        updateDiagnosticUI();
 
         // INICIALIZAÇÃO
         populatePesosDropdown();
