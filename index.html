@@ -1751,6 +1751,28 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
 
   <!-- APLICAÇÃO JS -->
   <script>
+    // Função auxiliar segura para sanitização HTML (escopo global)
+    function escapeHtml(text) {
+      if (text === null || text === undefined) return "";
+      return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // Formatadores globais auxiliares
+    function formatarMoeda(val) {
+      if (typeof val !== 'number' || isNaN(val)) return 'R$ 0,00';
+      return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function formatarPercentual(val) {
+      if (typeof val !== 'number' || isNaN(val)) return '0,0%';
+      return Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 2 }) + '%';
+    }
+
     // Configuração oficial do Firebase Firestore
     const firebaseConfig = {
       apiKey: "AIzaSyCB7V9AoZ1fY-Rc-6g8IVnEa2wW6YF6Qfo",
@@ -2203,16 +2225,9 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
           }
         }
 
-        // FORMATADOR DE MOEDA BRL
-        const fmtBRL = (val) => {
-          if (typeof val !== 'number' || isNaN(val)) return 'R$ 0,00';
-          return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        };
-
-        const fmtPct = (val) => {
-          if (typeof val !== 'number' || isNaN(val)) return '0,0%';
-          return (val).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 2 }) + '%';
-        };
+        // FORMATADORES DE MOEDA E PERCENTUAL
+        const fmtBRL = (val) => formatarMoeda(val);
+        const fmtPct = (val) => formatarPercentual(val);
 
         // ARREDONDAMENTO MONETÁRIO EXATO (2 CASAS DECIMAIS)
         const roundCents = (val) => {
@@ -2978,6 +2993,105 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
           });
         });
 
+        // BOTÃO E LÓGICA DO TESTE DE CONEXÃO
+        // ==========================================
+        const btnDiagTest = document.getElementById('btn-diag-test');
+        const diagTestResult = document.getElementById('diag-test-result');
+
+        async function executeDiagnosticTest() {
+          if (!diagTestResult) return;
+          diagTestResult.className = 'diag-test-result is-visible';
+          diagTestResult.style.background = '#f8fafc';
+          diagTestResult.style.borderColor = '#cbd5e1';
+          diagTestResult.innerHTML = `<strong>🔄 Executando teste de conexão...</strong><br>
+            • Etapa 1: Validando presença do SDK global...<br>
+            • Etapa 2: Testando leitura e gravação no Firestore...`;
+
+          if (typeof firebase === 'undefined') {
+            diagTestResult.style.background = '#fef2f2';
+            diagTestResult.style.borderColor = '#fca5a5';
+            diagTestResult.innerHTML = `
+              <strong style="color:#b91c1c;">❌ Falha no teste de conexão:</strong><br>
+              O objeto global <code>firebase</code> não existe (typeof firebase === "undefined").<br>
+              <span style="color:#7f1d1d; font-size:0.75rem;">Causa provável: os scripts do Firebase não foram carregados pelo navegador, bloqueador de scripts ativo ou restrição de rede externa. O simulador está operando com fallback em memória.</span>
+            `;
+            diagState.sdkOk = false;
+            diagState.sdkMsg = 'SDK Firebase NÃO carregou — verifique sua internet ou bloqueador de scripts';
+            diagState.sdkErr = { code: 'SDK_NOT_LOADED', message: 'typeof firebase === "undefined"', full: '[SDK_NOT_LOADED] typeof firebase === "undefined"' };
+            updateDiagnosticUI();
+            return;
+          }
+
+          if (!db) {
+            diagTestResult.style.background = '#fef2f2';
+            diagTestResult.style.borderColor = '#fca5a5';
+            diagTestResult.innerHTML = `
+              <strong style="color:#b91c1c;">❌ Falha no teste de conexão:</strong><br>
+              O Firestore não está inicializado.<br>
+              <span style="color:#7f1d1d; font-size:0.75rem;">${diagState.initErr ? escapeHtml(diagState.initErr.full) : 'Execute firebase.initializeApp(firebaseConfig)'}</span>
+            `;
+            return;
+          }
+
+          try {
+            const startTimestamp = Date.now();
+            // 1. Teste de Leitura
+            const pingSnapshot = await db.collection("embalagens").limit(1).get();
+            const readLatency = Date.now() - startTimestamp;
+
+            // 2. Teste de Gravação na coleção "teste"
+            const writeStart = Date.now();
+            const testPayload = {
+              origem: 'painel_diagnostico_ewm',
+              timestamp: Date.now(),
+              dataIso: new Date().toISOString()
+            };
+            const docRef = await db.collection("teste").add(testPayload);
+            const writeLatency = Date.now() - writeStart;
+
+            // 3. Teste de Exclusão do documento temporário
+            await db.collection("teste").doc(docRef.id).delete();
+
+            // Atualiza status de sucesso
+            diagState.connOk = true;
+            diagState.connMsg = `Conexão ativa e verificada (latência leitura: ${readLatency}ms, gravação: ${writeLatency}ms)`;
+            diagState.connErr = null;
+            diagState.writeOk = true;
+            diagState.writeMsg = `Salvo no Firestore (id: ${docRef.id}, teste completado com sucesso)`;
+            diagState.writeErr = null;
+
+            diagTestResult.style.background = '#f0fdf4';
+            diagTestResult.style.borderColor = '#86efac';
+            diagTestResult.innerHTML = `
+              <strong style="color:#15803d;">✅ Teste de conexão realizado com SUCESSO!</strong><br>
+              • <strong>Leitura:</strong> Coleção "embalagens" respondeu em ${readLatency}ms.<br>
+              • <strong>Gravação de teste:</strong> Documento criado na coleção <code>teste</code> com ID <code>${docRef.id}</code> em ${writeLatency}ms.<br>
+              • <strong>Exclusão de teste:</strong> Documento temporário removido com sucesso.<br>
+              • <strong>Status:</strong> Conexão e permissões de leitura/escrita do Firestore estão 100% funcionais!
+            `;
+            updateDiagnosticUI();
+          } catch (testErr) {
+            const errInfo = extractErrorInfo(testErr);
+            console.error("Erro durante o teste de conexão:", testErr);
+
+            diagState.connOk = false;
+            diagState.connErr = errInfo;
+            diagState.connMsg = `Erro no teste Firestore: ${errInfo.full}`;
+
+            diagTestResult.style.background = '#fef2f2';
+            diagTestResult.style.borderColor = '#fca5a5';
+            diagTestResult.innerHTML = `
+              <strong style="color:#b91c1c;">❌ Falha durante o teste de Firestore:</strong><br>
+              • <strong>Código do erro:</strong> <code>${escapeHtml(errInfo.code || 'sem código')}</code><br>
+              • <strong>Mensagem detalhada:</strong> ${escapeHtml(errInfo.message)}<br>
+              <div style="margin-top:6px; font-size:0.75rem; color:#7f1d1d;">
+                ${errInfo.code === 'permission-denied' ? '👉 Verifique as Regras de Segurança (Firestore Rules) no console do Firebase para permitir leitura e escrita.' : '👉 Verifique a conectividade de rede, chaves de API e se a coleção está acessível.'}
+              </div>
+            `;
+            updateDiagnosticUI();
+          }
+        }
+=======
         document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
           backdrop.addEventListener('click', (e) => {
             if (e.target === backdrop) {
@@ -2986,21 +3100,143 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
           });
         });
 
-        // Escape string helper
-        function escapeHtml(str) {
-          if (!str) return '';
-          return str.replace(/[&<>"']/g, function(m) {
-            return {
-              '&': '&amp;',
-              '<': '&lt;',
-              '>': '&gt;',
-              '"': '&quot;',
-              "'": '&#039;'
-            }[m];
-          });
-        }
-
         // ==========================================
+        // BOTÃO E LÓGICA DO TESTE DE CONEXÃO
+        // ==========================================
+        const btnDiagTest = document.getElementById('btn-diag-test');
+        const diagTestResult = document.getElementById('diag-test-result');
+
+        async function executeDiagnosticTest() {
+          if (!diagTestResult) return;
+          diagTestResult.className = 'diag-test-result is-visible';
+          diagTestResult.style.background = '#f8fafc';
+          diagTestResult.style.borderColor = '#cbd5e1';
+          diagTestResult.innerHTML = `<strong>🔄 Executando teste de conexão completo...</strong><br>
+            • Etapa 1: Validando carregamento do SDK Firebase...<br>
+            • Etapa 2: Inicializando serviço Firebase...<br>
+            • Etapa 3: Lendo coleções "embalagens" e "categorias"...<br>
+            • Etapa 4: Gravando e removendo documento na coleção "teste"...`;
+
+          // 1. Carregamento do SDK
+          if (typeof firebase === 'undefined') {
+            diagState.sdkOk = false;
+            diagState.sdkMsg = 'SDK Firebase NÃO carregou — objeto global firebase não definido';
+            diagState.sdkErr = { code: 'SDK_NOT_LOADED', message: 'typeof firebase === "undefined"', full: '[SDK_NOT_LOADED] typeof firebase === "undefined"' };
+            updateDiagnosticUI();
+
+            diagTestResult.style.background = '#fef2f2';
+            diagTestResult.style.borderColor = '#fca5a5';
+            diagTestResult.innerHTML = `
+              <strong style="color:#b91c1c;">❌ Falha na Etapa 1 (SDK):</strong><br>
+              • <strong>Código do erro:</strong> <code>SDK_NOT_LOADED</code><br>
+              • <strong>Mensagem:</strong> Objeto global <code>firebase</code> não encontrado.<br>
+            `;
+            return;
+          }
+          diagState.sdkOk = true;
+          diagState.sdkCount = "2/2";
+          diagState.sdkMsg = `SDK Firebase carregado ✅ (${diagState.sdkCount} módulos ativos — v${firebase.SDK_VERSION || '10.12.2'})`;
+          diagState.sdkErr = null;
+
+          // 2. Inicialização do Firebase
+          if (!db) {
+            try {
+              const app = (!firebase.apps || !firebase.apps.length)
+                ? firebase.initializeApp(firebaseConfig)
+                : firebase.app();
+              db = firebase.firestore();
+              diagState.initOk = true;
+              diagState.initMsg = `Firebase inicializado com sucesso (Projeto: ${firebaseConfig.projectId})`;
+              diagState.initErr = null;
+            } catch (errInit) {
+              const errInfo = extractErrorInfo(errInit);
+              diagState.initOk = false;
+              diagState.initErr = errInfo;
+              diagState.initMsg = `Falha na inicialização: ${errInfo.full}`;
+              updateDiagnosticUI();
+
+              diagTestResult.style.background = '#fef2f2';
+              diagTestResult.style.borderColor = '#fca5a5';
+              diagTestResult.innerHTML = `
+                <strong style="color:#b91c1c;">❌ Falha na Etapa 2 (Inicialização):</strong><br>
+                • <strong>Código do erro:</strong> <code>${escapeHtml(errInfo.code || 'INIT_FAILED')}</code><br>
+                • <strong>Mensagem:</strong> ${escapeHtml(errInfo.message)}<br>
+              `;
+              return;
+            }
+          } else {
+            diagState.initOk = true;
+            diagState.initMsg = `Firebase inicializado com sucesso (Projeto: ${firebaseConfig.projectId})`;
+            diagState.initErr = null;
+          }
+
+          try {
+            // 3. Leitura das coleções "embalagens" e "categorias"
+            const t0 = Date.now();
+            const snapEmb = await db.collection("embalagens").limit(1).get();
+            const snapCat = await db.collection("categorias").limit(1).get();
+            const readTime = Date.now() - t0;
+
+            diagState.connOk = true;
+            diagState.connMsg = `Conexão ativa: coleções "embalagens" e "categorias" lidas com sucesso (${readTime}ms)`;
+            diagState.connErr = null;
+
+            // 4. Gravação de teste na coleção "teste"
+            const t1 = Date.now();
+            const testPayload = {
+              origem: 'painel_diagnostico_ewm',
+              timestamp: Date.now(),
+              dataIso: new Date().toISOString()
+            };
+            const docRef = await db.collection("teste").add(testPayload);
+            const writeTime = Date.now() - t1;
+
+            // 5. Exclusão do documento de teste temporário
+            await db.collection("teste").doc(docRef.id).delete();
+
+            diagState.writeOk = true;
+            diagState.writeMsg = `Gravação e exclusão de teste confirmadas (id: ${docRef.id}, latência: ${writeTime}ms)`;
+            diagState.writeErr = null;
+
+            updateDiagnosticUI();
+
+            diagTestResult.style.background = '#f0fdf4';
+            diagTestResult.style.borderColor = '#86efac';
+            diagTestResult.innerHTML = `
+              <strong style="color:#15803d;">✅ Teste de conexão realizado com SUCESSO!</strong><br>
+              • <strong>SDK Firebase:</strong> Módulos ativos e disponíveis ✅<br>
+              • <strong>Inicialização:</strong> Projeto <code>${escapeHtml(firebaseConfig.projectId)}</code> conectado ✅<br>
+              • <strong>Leitura:</strong> Coleções "embalagens" e "categorias" lidas em ${readTime}ms ✅<br>
+              • <strong>Gravação de teste:</strong> Documento gravado na coleção <code>teste</code> (ID: <code>${escapeHtml(docRef.id)}</code> em ${writeTime}ms) ✅<br>
+              • <strong>Exclusão de teste:</strong> Documento temporário apagado com sucesso ✅<br>
+              • <strong>Status geral:</strong> Leitura, gravação e permissões Firestore 100% operacionais!
+            `;
+          } catch (testErr) {
+            const errInfo = extractErrorInfo(testErr);
+            console.error("Erro durante o teste de conexão:", testErr);
+
+            diagState.connOk = false;
+            diagState.connErr = errInfo;
+            diagState.connMsg = `Falha na operação Firestore: ${errInfo.full}`;
+
+            diagState.writeOk = false;
+            diagState.writeErr = errInfo;
+            diagState.writeMsg = `Erro de gravação: ${errInfo.full}`;
+
+            updateDiagnosticUI();
+
+            diagTestResult.style.background = '#fef2f2';
+            diagTestResult.style.borderColor = '#fca5a5';
+            diagTestResult.innerHTML = `
+              <strong style="color:#b91c1c;">❌ Falha durante o teste do Firestore:</strong><br>
+              • <strong>Código do erro:</strong> <code>${escapeHtml(errInfo.code || 'sem código')}</code><br>
+              • <strong>Mensagem detalhada:</strong> ${escapeHtml(errInfo.message)}<br>
+              <div style="margin-top:6px; font-size:0.75rem; color:#7f1d1d;">
+                ${errInfo.code === 'permission-denied' ? '👉 Verifique as Regras de Segurança (Firestore Rules) no console para liberar leitura/escrita nas coleções.' : '👉 Verifique a conexão com a internet e as configurações do projeto Firebase.'}
+              </div>
+            `;
+          }
+        }==========================================
         // BOTÃO E LÓGICA DO TESTE DE CONEXÃO
         // ==========================================
         const btnDiagTest = document.getElementById('btn-diag-test');
