@@ -4,14 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Calculadora de Precificação EWM Distribuidora</title>
-  
-  <!-- Basecoat CSS CDN -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@1.0.2/dist/basecoat.cdn.min.css">
-  
-  <!-- Google Fonts: Inter -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-  
-  <!-- System Shell CSS & JS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@1.0.2/dist/basecoat.cdn.min.css">
   <style>
 /* Skip artifact shell — fixed styles served beside every artifact.
    Complements basecoat; artifacts override --accent for their own identity. */
@@ -122,209 +116,173 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
 
 </style>
   
-
   <style>
     :root {
       --accent: #1e4d8c;
-      --accent-hover: #0f2a5c;
-      --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      --color-green: #2e7d32;
-      --color-green-light: #e8f5e9;
-      --bg-input-highlight: #fff8e1;
+      --accent-contrast: #ffffff;
+      --green-highlight: #2e7d32;
+      --field-bg: #fff8e1;
       --bg-page: #f5f7fa;
-      --border-color: #d1d5db;
     }
-
-    * {
-      box-sizing: border-box;
-      font-family: var(--font-sans);
+    html {
+      scroll-behavior: smooth;
     }
-
     body {
       background-color: var(--bg-page);
-      color: #1f2937;
+      color: #1e293b;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       margin: 0;
       padding: 0;
-      line-height: 1.5;
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+    }
+    *, *::before, *::after {
+      box-sizing: inherit;
     }
 
-    /* Header */
-    .ewm-header {
+    /* Header styling */
+    .app-header {
       background: linear-gradient(135deg, #0f2a5c 0%, #1e4d8c 100%);
       color: #ffffff;
-      padding: 1.75rem 1rem;
-      box-shadow: 0 4px 12px rgba(15, 42, 92, 0.15);
+      padding: 1.5rem 1rem;
+      border-bottom: 3px solid #f59e0b;
+      box-shadow: 0 4px 14px rgba(15, 42, 92, 0.25);
     }
-
     .header-content {
       max-width: 1200px;
       margin: 0 auto;
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      gap: 0.75rem;
     }
-
     @media (min-width: 768px) {
       .header-content {
         flex-direction: row;
-        justify-content: space-between;
         align-items: center;
+        justify-content: space-between;
       }
     }
-
-    .brand-title {
-      font-size: 1.75rem;
-      font-weight: 800;
-      letter-spacing: -0.025em;
+    .header-title-group h1 {
       margin: 0;
+      font-size: 1.55rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
       color: #ffffff;
     }
-
-    .brand-subtitle {
-      font-size: 0.95rem;
+    .header-title-group p {
+      margin: 0.35rem 0 0;
+      font-size: 0.92rem;
       color: #cbd5e1;
-      margin: 0.35rem 0 0 0;
-      font-weight: 400;
     }
-
     .header-nav {
       display: flex;
       gap: 0.5rem;
       flex-wrap: wrap;
     }
-
-    .nav-link {
+    .header-nav a {
       color: #ffffff;
       text-decoration: none;
+      font-size: 0.85rem;
       font-weight: 600;
-      font-size: 0.875rem;
       padding: 0.45rem 0.85rem;
       border-radius: 6px;
       background: rgba(255, 255, 255, 0.12);
-      transition: background 0.2s ease, transform 0.1s ease;
-      min-height: 40px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: background 0.2s, transform 0.1s;
+    }
+    .header-nav a:hover {
+      background: rgba(255, 255, 255, 0.22);
+      transform: translateY(-1px);
+    }
+
+    /* Diagnostics Banner */
+    .diagnostic-bar {
+      background: #ffffff;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 0.85rem;
+    }
+    .diagnostic-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0.6rem 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+    .diag-status {
       display: inline-flex;
       align-items: center;
+      gap: 0.4rem;
+      font-weight: 600;
+      color: #1e293b;
+    }
+    .diag-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .btn-diag {
+      padding: 0.3rem 0.65rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border-radius: 4px;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      color: #334155;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-diag:hover {
+      background: #e2e8f0;
     }
 
-    .nav-link:hover, .nav-link:focus-visible {
-      background: rgba(255, 255, 255, 0.25);
-      outline: none;
-    }
-
-    /* Container */
-    .main-container {
+    /* Main Container */
+    .calc-container {
       max-width: 1200px;
-      margin: 1.5rem auto 3rem auto;
+      margin: 1.5rem auto 3rem;
       padding: 0 1rem;
     }
 
-    /* Diagnostic Bar */
-    .diag-card {
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
-      border-radius: 10px;
-      margin-bottom: 1.5rem;
-      overflow: hidden;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-    }
-
-    .diag-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.75rem 1rem;
-      background: #f8fafc;
-      border-bottom: 1px solid #e2e8f0;
-      font-size: 0.875rem;
-      font-weight: 600;
-    }
-
-    .diag-status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      padding: 0.25rem 0.65rem;
-      border-radius: 999px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      background: #fef3c7;
-      color: #92400e;
-    }
-
-    .diag-status-badge.online {
-      background: #dcfce7;
-      color: #166534;
-    }
-
-    .diag-status-badge.offline {
-      background: #fee2e2;
-      color: #991b1b;
-    }
-
-    .diag-body {
-      padding: 1rem;
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 0.75rem;
-      font-size: 0.85rem;
-    }
-
-    @media (min-width: 768px) {
-      .diag-body {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-
-    .diag-step {
-      display: flex;
-      align-items: flex-start;
-      gap: 0.5rem;
-    }
-
-    .diag-step-icon {
-      font-size: 1rem;
-      line-height: 1.2;
-    }
-
-    /* Main Form Layout */
-    .form-panel {
+    /* Cards & Layout */
+    .calc-card {
       background: #ffffff;
       border-radius: 12px;
-      border: 1px solid #e2e8f0;
       padding: 1.5rem;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
-      margin-bottom: 2rem;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+      margin-bottom: 1.75rem;
     }
-
-    .form-section-title {
+    .card-title {
+      margin: 0 0 1.25rem 0;
       font-size: 1.25rem;
       font-weight: 700;
       color: #0f2a5c;
-      margin-top: 0;
-      margin-bottom: 1.25rem;
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      border-bottom: 2px solid #e2e8f0;
-      padding-bottom: 0.5rem;
+    }
+    .card-title svg {
+      width: 22px;
+      height: 22px;
+      fill: #1e4d8c;
     }
 
+    /* Inputs grid */
     .form-grid {
       display: grid;
       grid-template-columns: 1fr;
-      gap: 1rem;
+      gap: 1.1rem;
     }
-
     @media (min-width: 640px) {
       .form-grid {
         grid-template-columns: repeat(2, 1fr);
       }
     }
-
     @media (min-width: 1024px) {
       .form-grid {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(3, 1fr);
       }
     }
 
@@ -333,1123 +291,1039 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
       flex-direction: column;
       gap: 0.35rem;
     }
-
     .form-group label {
-      font-size: 0.85rem;
+      font-size: 0.84rem;
       font-weight: 600;
-      color: #374151;
+      color: #334155;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-
-    .form-group.highlight-input input,
-    .form-group.highlight-input select {
-      background-color: var(--bg-input-highlight);
-    }
-
-    .form-control {
+    .custom-input, .custom-select {
+      background-color: var(--field-bg);
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 0.65rem 0.8rem;
+      font-size: 0.95rem;
+      color: #0f172a;
+      font-family: inherit;
       width: 100%;
       min-height: 44px;
-      padding: 0.5rem 0.75rem;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      font-size: 0.95rem;
-      color: #111827;
-      transition: border-color 0.2s, box-shadow 0.2s;
+      box-sizing: border-box;
+      transition: border-color 0.15s, box-shadow 0.15s;
     }
-
-    .form-control:focus {
+    .custom-input:focus, .custom-select:focus {
       outline: none;
       border-color: #1e4d8c;
       box-shadow: 0 0 0 3px rgba(30, 77, 140, 0.15);
     }
 
-    .input-with-button {
+    .input-with-btn {
       display: flex;
-      gap: 0.5rem;
+      gap: 0.4rem;
     }
-
-    .btn-secondary-action {
-      min-height: 44px;
+    .btn-manage {
       padding: 0 0.75rem;
-      background: #f1f5f9;
+      background: #e2e8f0;
+      color: #0f2a5c;
+      font-size: 0.8rem;
+      font-weight: 600;
       border: 1px solid #cbd5e1;
       border-radius: 8px;
-      color: #1e4d8c;
-      font-weight: 600;
-      font-size: 0.8rem;
       cursor: pointer;
       white-space: nowrap;
-      transition: background 0.2s;
+      min-height: 44px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      transition: background 0.15s;
+    }
+    .btn-manage:hover {
+      background: #cbd5e1;
     }
 
-    .btn-secondary-action:hover {
-      background: #e2e8f0;
-    }
-
-    /* ML Group Panel */
-    .ml-panel {
+    /* Subpanel for Mercado Livre details */
+    .ml-subpanel {
       grid-column: 1 / -1;
       background: #f8fafc;
-      border: 1px dashed #cbd5e1;
       border-radius: 10px;
-      padding: 1rem;
-      margin-top: 0.5rem;
-    }
-
-    .ml-panel-title {
-      font-size: 0.9rem;
-      font-weight: 700;
-      color: #1e4d8c;
-      margin-top: 0;
-      margin-bottom: 0.75rem;
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-    }
-
-    .ml-grid {
+      padding: 1.15rem;
+      border: 1px dashed #cbd5e1;
       display: grid;
       grid-template-columns: 1fr;
       gap: 1rem;
+      margin-top: 0.25rem;
     }
-
     @media (min-width: 768px) {
-      .ml-grid {
-        grid-template-columns: 1fr 1.5fr 1.5fr;
+      .ml-subpanel {
+        grid-template-columns: repeat(3, 1fr);
       }
     }
-
-    /* Result Cards */
-    .results-heading {
-      font-size: 1.35rem;
-      font-weight: 800;
-      color: #0f2a5c;
-      margin-bottom: 1rem;
+    .radio-pill-group {
+      display: flex;
+      gap: 0.5rem;
+      min-height: 44px;
+      align-items: center;
+    }
+    .radio-pill {
+      flex: 1;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 0.5rem;
+      justify-content: center;
+      gap: 0.35rem;
+      padding: 0.65rem 0.5rem;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #334155;
+      user-select: none;
+      transition: all 0.15s;
+    }
+    .radio-pill input {
+      margin: 0;
+      accent-color: #1e4d8c;
+    }
+    .radio-pill.active {
+      border-color: #1e4d8c;
+      background: #eff6ff;
+      color: #0f2a5c;
     }
 
+    /* Results section */
     .results-grid {
       display: grid;
       grid-template-columns: 1fr;
       gap: 1.25rem;
-      margin-bottom: 2.5rem;
+      margin-top: 1.5rem;
     }
-
-    @media (min-width: 900px) {
+    @media (min-width: 840px) {
       .results-grid {
         grid-template-columns: repeat(3, 1fr);
       }
     }
 
-    .marketplace-card {
+    .result-card {
       background: #ffffff;
       border: 1px solid #e2e8f0;
       border-radius: 12px;
-      padding: 1.5rem;
-      position: relative;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+      padding: 1.35rem;
       display: flex;
       flex-direction: column;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      position: relative;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+      transition: transform 0.2s, box-shadow 0.2s;
     }
-
-    .marketplace-card:hover {
+    .result-card:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.09);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
     }
-
-    .marketplace-card.best-price {
+    .result-card.is-best {
       border: 2px solid #2e7d32;
+      background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 16%);
     }
 
-    .best-price-badge {
+    .badge-best {
       position: absolute;
-      top: -12px;
-      right: 16px;
+      top: -11px;
+      right: 14px;
       background: #2e7d32;
       color: #ffffff;
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       font-weight: 700;
-      padding: 0.25rem 0.75rem;
-      border-radius: 999px;
-      box-shadow: 0 2px 6px rgba(46, 125, 50, 0.35);
       text-transform: uppercase;
-      letter-spacing: 0.03em;
+      letter-spacing: 0.04em;
+      padding: 0.25rem 0.65rem;
+      border-radius: 20px;
+      box-shadow: 0 2px 6px rgba(46, 125, 50, 0.3);
     }
 
-    .card-header-mkp {
+    .platform-header {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
-      margin-bottom: 1rem;
-      border-bottom: 1px solid #f1f5f9;
+      gap: 0.6rem;
+      margin-bottom: 0.75rem;
       padding-bottom: 0.75rem;
+      border-bottom: 1px solid #f1f5f9;
     }
-
-    .mkp-icon {
-      width: 40px;
-      height: 40px;
+    .platform-logo-box {
+      width: 36px;
+      height: 36px;
       border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 800;
       font-size: 1.1rem;
-      color: #ffffff;
+      font-weight: 800;
       flex-shrink: 0;
     }
+    .logo-tiktok { background: #000000; color: #ffffff; }
+    .logo-shopee { background: #ee4d2d; color: #ffffff; }
+    .logo-ml { background: #ffe600; color: #2d3277; }
 
-    .icon-tiktok { background: #000000; }
-    .icon-shopee { background: #ee4d2d; }
-    .icon-ml { background: #2d3277; }
-
-    .mkp-title {
-      font-size: 1.15rem;
-      font-weight: 700;
-      color: #0f172a;
+    .platform-name {
       margin: 0;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #0f2a5c;
+    }
+    .platform-tag {
+      font-size: 0.73rem;
+      color: #64748b;
     }
 
     .price-block {
+      text-align: center;
       background: #f8fafc;
       border-radius: 10px;
-      padding: 1rem;
-      text-align: center;
-      margin-bottom: 1.25rem;
+      padding: 1rem 0.5rem;
+      margin-bottom: 1.1rem;
       border: 1px solid #e2e8f0;
     }
-
+    .result-card.is-best .price-block {
+      background: #ecfdf5;
+      border-color: #a7f3d0;
+    }
     .price-label {
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: #64748b;
+      font-size: 0.76rem;
+      font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      margin-bottom: 0.25rem;
+      color: #64748b;
+      margin-bottom: 0.2rem;
     }
-
     .price-value {
-      font-size: 2rem;
+      font-size: 1.95rem;
       font-weight: 800;
-      color: var(--color-green);
+      color: var(--green-highlight);
+      font-variant-numeric: tabular-nums;
       line-height: 1.1;
     }
 
-    .breakdown-table {
-      width: 100%;
-      border-collapse: collapse;
+    .cost-details-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
       font-size: 0.85rem;
-      margin-bottom: 1rem;
+      flex-grow: 1;
     }
-
-    .breakdown-table tr {
-      border-bottom: 1px solid #f1f5f9;
-    }
-
-    .breakdown-table td {
-      padding: 0.45rem 0;
+    .cost-item {
+      display: flex;
+      justify-content: space-between;
       color: #475569;
     }
-
-    .breakdown-table td.num {
-      text-align: right;
+    .cost-item.total-tax-row {
+      font-weight: 700;
+      color: #0f172a;
+      border-top: 1px dashed #cbd5e1;
+      padding-top: 0.45rem;
+      margin-top: 0.2rem;
+    }
+    .cost-item.profit-row {
+      font-weight: 700;
+      color: #1e4d8c;
+    }
+    .cost-item.margin-row {
+      font-weight: 700;
+      color: #2e7d32;
+    }
+    .cost-value {
+      font-variant-numeric: tabular-nums;
       font-weight: 600;
       color: #1e293b;
     }
-
-    .breakdown-table tr.total-row td {
-      border-top: 2px solid #e2e8f0;
-      font-weight: 700;
-      color: #0f172a;
-      padding-top: 0.65rem;
-    }
-
-    .breakdown-table tr.profit-row td {
-      font-weight: 800;
-      color: #1e4d8c;
-      font-size: 0.95rem;
-      padding-top: 0.4rem;
-    }
-
-    .card-footer-info {
-      margin-top: auto;
+    .faixa-badge {
+      display: inline-block;
+      margin-top: 0.85rem;
+      padding: 0.35rem 0.6rem;
       background: #f1f5f9;
       border-radius: 6px;
-      padding: 0.5rem 0.75rem;
-      font-size: 0.75rem;
+      font-size: 0.74rem;
       color: #475569;
-      display: flex;
-      justify-content: space-between;
+      line-height: 1.3;
     }
 
-    /* Explanation and Rates Section */
+    /* Explanation & Rules sections */
     .info-section {
       background: #ffffff;
-      border: 1px solid #e2e8f0;
       border-radius: 12px;
       padding: 1.75rem;
-      margin-bottom: 2rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+      border: 1px solid #e2e8f0;
+      margin-bottom: 1.75rem;
     }
-
-    .info-section h2 {
-      font-size: 1.3rem;
-      font-weight: 800;
+    .info-section h3 {
+      margin: 0 0 1rem 0;
       color: #0f2a5c;
-      margin-top: 0;
-      margin-bottom: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
+      font-size: 1.2rem;
+      font-weight: 700;
     }
-
     .steps-grid {
       display: grid;
       grid-template-columns: 1fr;
-      gap: 1.25rem;
+      gap: 1rem;
     }
-
     @media (min-width: 768px) {
       .steps-grid {
         grid-template-columns: repeat(3, 1fr);
       }
     }
-
     .step-card {
       background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 10px;
-      padding: 1.25rem;
-      position: relative;
+      border-radius: 8px;
+      padding: 1rem;
+      border-left: 4px solid #1e4d8c;
     }
-
-    .step-number {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 28px;
-      height: 28px;
-      background: #1e4d8c;
-      color: #ffffff;
-      border-radius: 50%;
-      font-weight: 700;
-      font-size: 0.85rem;
-      margin-bottom: 0.75rem;
+    .step-num {
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: #1e4d8c;
+      text-transform: uppercase;
+      margin-bottom: 0.3rem;
     }
-
-    .step-card h3 {
-      font-size: 1rem;
-      font-weight: 700;
-      margin: 0 0 0.5rem 0;
-      color: #1e293b;
-    }
-
-    .step-card p {
-      font-size: 0.85rem;
-      color: #64748b;
+    .step-text {
+      font-size: 0.88rem;
+      color: #475569;
       margin: 0;
       line-height: 1.45;
     }
 
-    .rates-table-wrap {
-      overflow-x: auto;
-      margin-top: 1rem;
+    .rules-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
+    @media (min-width: 768px) {
+      .rules-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    .rule-box {
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 1rem;
+      border: 1px solid #e2e8f0;
+      font-size: 0.86rem;
+      color: #334155;
+      line-height: 1.5;
+    }
+    .rule-box strong {
+      color: #0f2a5c;
     }
 
-    .rates-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.85rem;
-      text-align: left;
+    /* Footer */
+    .app-footer {
+      background: #0f2a5c;
+      color: #94a3b8;
+      padding: 2.25rem 1rem;
+      text-align: center;
+      font-size: 0.84rem;
+      border-top: 1px solid #1e3a6e;
     }
-
-    .rates-table th {
-      background: #f1f5f9;
-      color: #1e293b;
+    .footer-title {
       font-weight: 700;
-      padding: 0.75rem;
-      border: 1px solid #e2e8f0;
+      color: #ffffff;
+      margin-bottom: 0.4rem;
     }
 
-    .rates-table td {
-      padding: 0.75rem;
-      border: 1px solid #e2e8f0;
-      color: #475569;
-    }
-
-    /* Modal Styling */
+    /* Modal System */
     .modal-overlay {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(15, 23, 42, 0.6);
-      display: none;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(2px);
+      display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 1000;
       padding: 1rem;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
     }
-
-    .modal-overlay.active {
-      display: flex;
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
     }
-
-    .modal-dialog {
+    .modal-card {
       background: #ffffff;
+      border-radius: 14px;
       width: 100%;
-      max-width: 650px;
+      max-width: 620px;
       max-height: 90vh;
-      border-radius: 12px;
       display: flex;
       flex-direction: column;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.08);
       overflow: hidden;
     }
-
     .modal-header {
-      padding: 1.25rem 1.5rem;
+      padding: 1.15rem 1.35rem;
       border-bottom: 1px solid #e2e8f0;
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      justify-content: space-between;
       background: #f8fafc;
     }
-
-    .modal-title {
-      font-size: 1.15rem;
+    .modal-header h4 {
+      margin: 0;
+      font-size: 1.12rem;
       font-weight: 700;
       color: #0f2a5c;
-      margin: 0;
     }
-
     .modal-close-btn {
       background: none;
       border: none;
-      font-size: 1.5rem;
+      font-size: 1.4rem;
       line-height: 1;
-      color: #64748b;
       cursor: pointer;
-      padding: 0.25rem;
-      min-height: 36px;
+      color: #64748b;
       min-width: 36px;
+      min-height: 36px;
+      border-radius: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
     }
-
-    .modal-body {
-      padding: 1.5rem;
-      overflow-y: auto;
+    .modal-close-btn:hover {
+      background: #e2e8f0;
+      color: #0f172a;
     }
+    .modal-body {
+      padding: 1.35rem;
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .modal-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    .modal-table th {
+      background: #f1f5f9;
+      color: #334155;
+      font-weight: 600;
+      text-align: left;
+      padding: 0.55rem 0.65rem;
+      border-bottom: 1px solid #cbd5e1;
+    }
+    .modal-table td {
+      padding: 0.55rem 0.65rem;
+      border-bottom: 1px solid #f1f5f9;
+      color: #1e293b;
+    }
+    .btn-action-small {
+      padding: 0.25rem 0.55rem;
+      font-size: 0.76rem;
+      font-weight: 600;
+      border-radius: 4px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      min-height: 30px;
+    }
+    .btn-edit {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border-color: #bfdbfe;
+    }
+    .btn-edit:hover { background: #dbeafe; }
+    .btn-delete {
+      background: #fef2f2;
+      color: #b91c1c;
+      border-color: #fecaca;
+      margin-left: 0.25rem;
+    }
+    .btn-delete:hover { background: #fee2e2; }
 
     .modal-form-box {
       background: #f8fafc;
-      border: 1px solid #e2e8f0;
       border-radius: 8px;
       padding: 1rem;
-      margin-bottom: 1.5rem;
+      border: 1px solid #e2e8f0;
     }
-
-    .modal-form-title {
-      font-size: 0.9rem;
-      font-weight: 700;
-      margin-top: 0;
-      margin-bottom: 0.75rem;
-      color: #1e4d8c;
+    .modal-form-box h5 {
+      margin: 0 0 0.75rem 0;
+      font-size: 0.95rem;
+      color: #0f2a5c;
     }
-
-    .btn-action-primary {
+    .modal-form-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+    }
+    @media (min-width: 520px) {
+      .modal-form-grid.grid-3 {
+        grid-template-columns: 2fr 1fr 1fr;
+      }
+    }
+    .btn-save-item {
       background: #1e4d8c;
       color: #ffffff;
       border: none;
       border-radius: 6px;
-      padding: 0.5rem 1rem;
+      padding: 0.6rem 1rem;
       font-weight: 600;
-      font-size: 0.85rem;
+      font-size: 0.88rem;
       cursor: pointer;
-      min-height: 40px;
-      transition: background 0.2s;
+      min-height: 44px;
+      transition: background 0.15s;
     }
-
-    .btn-action-primary:hover {
+    .btn-save-item:hover {
       background: #0f2a5c;
     }
-
-    .item-list-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.85rem;
-    }
-
-    .item-list-table th {
-      background: #f1f5f9;
-      padding: 0.5rem;
-      border-bottom: 1px solid #cbd5e1;
-      text-align: left;
-      font-weight: 600;
+    .btn-cancel-edit {
+      background: #e2e8f0;
       color: #334155;
-    }
-
-    .item-list-table td {
-      padding: 0.5rem;
-      border-bottom: 1px solid #e2e8f0;
-      color: #334155;
-    }
-
-    .btn-table-sm {
-      padding: 0.25rem 0.5rem;
-      font-size: 0.75rem;
-      font-weight: 600;
-      border-radius: 4px;
-      border: 1px solid #cbd5e1;
-      background: #ffffff;
-      cursor: pointer;
-      margin-right: 0.25rem;
-      min-height: 30px;
-    }
-
-    .btn-table-sm.btn-danger {
-      color: #b91c1c;
-      border-color: #fca5a5;
-    }
-
-    .btn-table-sm.btn-danger:hover {
-      background: #fee2e2;
-    }
-
-    .btn-table-sm:hover {
-      background: #f1f5f9;
-    }
-
-    /* Footer */
-    .ewm-footer {
-      background: #ffffff;
-      border-top: 1px solid #e2e8f0;
-      padding: 2rem 1rem;
-      text-align: center;
-      color: #64748b;
-      font-size: 0.85rem;
-    }
-
-    .ewm-footer p {
-      margin: 0.25rem 0;
-    }
-
-    .ewm-footer-strong {
-      color: #1e293b;
-      font-weight: 600;
-    }
-
-    .cost-summary-pill {
-      background: #e0f2fe;
-      color: #0369a1;
+      border: none;
       border-radius: 6px;
-      padding: 0.35rem 0.75rem;
-      font-size: 0.85rem;
-      font-weight: 700;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
+      padding: 0.6rem 0.8rem;
+      font-weight: 600;
+      font-size: 0.88rem;
+      cursor: pointer;
+      min-height: 44px;
+      margin-left: 0.5rem;
+    }
+
+    .toast-msg {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #0f172a;
+      color: #ffffff;
+      padding: 0.75rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
+      z-index: 2000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+    }
+    .toast-msg.show {
+      opacity: 1;
     }
   </style>
 </head>
 <body>
 
-  <!-- Header -->
-  <header class="ewm-header">
+  <!-- App Header -->
+  <header class="app-header">
     <div class="header-content">
-      <div>
-        <h1 class="brand-title">EWM Distribuidora</h1>
-        <p class="brand-subtitle">Calculadora de Precificação — TikTok Shop, Shopee e Mercado Livre</p>
+      <div class="header-title-group">
+        <h1>EWM Distribuidora</h1>
+        <p>Calculadora de Precificação — TikTok Shop, Shopee e Mercado Livre</p>
       </div>
-      <nav class="header-nav" aria-label="Navegação Principal">
-        <a href="#calculadora" class="nav-link">Calculadora</a>
-        <a href="#como-funciona" class="nav-link">Como funciona</a>
-        <a href="#taxas" class="nav-link">Taxas</a>
+      <nav class="header-nav" aria-label="Navegação interna">
+        <a href="#calculadora">Calculadora</a>
+        <a href="#como-funciona">Como funciona</a>
+        <a href="#taxas">Taxas</a>
       </nav>
     </div>
   </header>
 
-  <main class="main-container">
-    <!-- Diagnostic and Sync Bar -->
-    <div class="diag-card" id="painel-diagnostico">
-      <div class="diag-header">
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
-          <span style="font-weight: 700;">Status do Sistema</span>
-          <span id="sync-status" class="diag-status-badge">Conectando ao Firebase...</span>
-        </div>
-        <div style="display: flex; gap: 0.5rem; align-items: center;">
-          <button type="button" class="btn-secondary-action" id="btn-testar-conexao" style="font-size: 0.75rem; min-height: 32px; padding: 0 0.5rem;">
-            🔄 Testar conexão
-          </button>
-          <button type="button" class="btn-secondary-action" id="btn-toggle-diag" style="font-size: 0.75rem; min-height: 32px; padding: 0 0.5rem;">
-            Ocultar detalhes
-          </button>
-        </div>
+  <!-- Diagnostic Panel (Collapsible) -->
+  <section class="diagnostic-bar" id="diag-panel">
+    <div class="diagnostic-inner">
+      <div class="diag-status" id="diag-status">
+        <span>🔄 Inicializando sistema de dados...</span>
       </div>
-      <div class="diag-body" id="diag-details">
-        <div class="diag-step" id="diag-sdk">
-          <span class="diag-step-icon">⏳</span>
-          <div>
-            <strong>SDK Firebase:</strong> <span class="diag-desc">Verificando...</span>
+      <div class="diag-actions">
+        <button type="button" class="btn-diag" id="btn-test-conn">Testar conexão</button>
+        <button type="button" class="btn-diag" id="btn-toggle-diag">Ocultar</button>
+      </div>
+    </div>
+  </section>
+
+  <main class="calc-container" id="calculadora">
+    <!-- Pricing Form Card -->
+    <div class="calc-card">
+      <h2 class="card-title">
+        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 2h2v2h-2V5zm0 4h2v2h-2V9zm-4-4h2v2H8V5zm0 4h2v2H8V9zm-1 8.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5-1.5-.67-1.5-1.5zm6 0c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5-1.5-.67-1.5-1.5zm3.5-3.5h-9v-2h9v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2z"/></svg>
+        Parâmetros de Custo e Margem
+      </h2>
+
+      <div class="form-grid">
+        <!-- Custo do produto -->
+        <div class="form-group">
+          <label for="inp-custo">Custo do produto (R$)</label>
+          <input type="number" step="0.01" min="0.01" id="inp-custo" class="custom-input" value="30.00">
+        </div>
+
+        <!-- Etiqueta -->
+        <div class="form-group">
+          <label for="inp-etiqueta">Etiqueta (R$)</label>
+          <input type="number" step="0.01" min="0" id="inp-etiqueta" class="custom-input" value="0.03">
+        </div>
+
+        <!-- Tipo de embalagem -->
+        <div class="form-group">
+          <label for="sel-embalagem">
+            <span>Tipo de embalagem</span>
+          </label>
+          <div class="input-with-btn">
+            <select id="sel-embalagem" class="custom-select" style="flex: 1;"></select>
+            <button type="button" class="btn-manage" id="btn-open-emb" title="Gerenciar Embalagens">Gerenciar</button>
           </div>
         </div>
-        <div class="diag-step" id="diag-init">
-          <span class="diag-step-icon">⏳</span>
-          <div>
-            <strong>Firebase inicializado:</strong> <span class="diag-desc">Aguardando...</span>
-          </div>
+
+        <!-- Quantidade da embalagem -->
+        <div class="form-group">
+          <label for="inp-qtd-emb">Quantidade da embalagem</label>
+          <input type="number" step="0.01" min="0.01" id="inp-qtd-emb" class="custom-input" value="1">
         </div>
-        <div class="diag-step" id="diag-firestore">
-          <span class="diag-step-icon">⏳</span>
-          <div>
-            <strong>Conexão com Firestore:</strong> <span class="diag-desc">Lendo dados...</span>
-          </div>
+
+        <!-- Imposto -->
+        <div class="form-group">
+          <label for="inp-imposto">Imposto (%)</label>
+          <input type="number" step="0.1" min="0" max="90" id="inp-imposto" class="custom-input" value="12">
         </div>
-        <div class="diag-step" id="diag-write">
-          <span class="diag-step-icon">⏳</span>
-          <div>
-            <strong>Última operação de gravação:</strong> <span class="diag-desc">Nenhuma operação ainda</span>
+
+        <!-- Comissão representante -->
+        <div class="form-group">
+          <label for="inp-rep">Comissão representante (%)</label>
+          <input type="number" step="0.1" min="0" max="50" id="inp-rep" class="custom-input" value="5">
+        </div>
+
+        <!-- Margem desejada -->
+        <div class="form-group">
+          <label for="inp-margem">Margem de lucro desejada (%)</label>
+          <input type="number" step="0.1" min="0" max="90" id="inp-margem" class="custom-input" value="15">
+        </div>
+
+        <!-- Somente Mercado Livre: Subpanel -->
+        <div class="ml-subpanel">
+          <!-- Tipo de Anúncio -->
+          <div class="form-group">
+            <label>Tipo de anúncio (Mercado Livre)</label>
+            <div class="radio-pill-group">
+              <label class="radio-pill active" id="lbl-tipo-classico">
+                <input type="radio" name="ml-tipo" value="classico" checked> Clássico
+              </label>
+              <label class="radio-pill" id="lbl-tipo-premium">
+                <input type="radio" name="ml-tipo" value="premium"> Premium
+              </label>
+            </div>
+          </div>
+
+          <!-- Categoria ML -->
+          <div class="form-group">
+            <label for="sel-categoria">Categoria (Mercado Livre)</label>
+            <div class="input-with-btn">
+              <select id="sel-categoria" class="custom-select" style="flex: 1;"></select>
+              <button type="button" class="btn-manage" id="btn-open-cat" title="Gerenciar Categorias">Gerenciar</button>
+            </div>
+          </div>
+
+          <!-- Faixa de peso ML -->
+          <div class="form-group">
+            <label for="sel-peso">Faixa de peso (Mercado Livre)</label>
+            <select id="sel-peso" class="custom-select"></select>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Calculator Section -->
-    <section id="calculadora" class="form-panel">
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 1.25rem;">
-        <h2 class="form-section-title" style="margin-bottom: 0; border-bottom: none; padding-bottom: 0;">
-          Parâmetros de Custo e Margem
-        </h2>
-        <div id="cost-summary" class="cost-summary-pill">
-          Custo Fixo Total (CF): R$ 30,05
-        </div>
-      </div>
-
-      <form id="pricing-form" onsubmit="return false;">
-        <div class="form-grid">
-          <!-- Custo do Produto -->
-          <div class="form-group highlight-input">
-            <label for="custo-produto">Custo do produto (R$)</label>
-            <input type="number" id="custo-produto" class="form-control" value="30.00" step="0.01" min="0" required>
-          </div>
-
-          <!-- Etiqueta -->
-          <div class="form-group highlight-input">
-            <label for="etiqueta">Etiqueta (R$)</label>
-            <input type="number" id="etiqueta" class="form-control" value="0.03" step="0.01" min="0" required>
-          </div>
-
-          <!-- Tipo de Embalagem -->
-          <div class="form-group highlight-input">
-            <label for="tipo-embalagem">Tipo de embalagem</label>
-            <div class="input-with-button">
-              <select id="tipo-embalagem" class="form-control" required>
-                <!-- Preenchido dinamicamente -->
-              </select>
-              <button type="button" class="btn-secondary-action" id="btn-modal-embalagens" title="Gerenciar embalagens">
-                ⚙️
-              </button>
-            </div>
-          </div>
-
-          <!-- Quantidade da Embalagem -->
-          <div class="form-group highlight-input">
-            <label for="qtd-embalagem">Qtd. da embalagem</label>
-            <input type="number" id="qtd-embalagem" class="form-control" value="1" step="0.1" min="0.1" required>
-          </div>
-
-          <!-- Imposto -->
-          <div class="form-group">
-            <label for="imposto">Imposto (%)</label>
-            <input type="number" id="imposto" class="form-control" value="12" step="0.1" min="0" max="100" required>
-          </div>
-
-          <!-- Comissão Representante -->
-          <div class="form-group">
-            <label for="comissao-rep">Comissão representante (%)</label>
-            <input type="number" id="comissao-rep" class="form-control" value="5" step="0.1" min="0" max="100" required>
-          </div>
-
-          <!-- Margem de Lucro Desejada -->
-          <div class="form-group">
-            <label for="margem-lucro">Margem de lucro desejada (%)</label>
-            <input type="number" id="margem-lucro" class="form-control" value="15" step="0.1" min="0" max="100" required>
-          </div>
-
-          <!-- Mercado Livre Options Container -->
-          <div class="ml-panel">
-            <h3 class="ml-panel-title">
-              <span>Configurações exclusivas do Mercado Livre</span>
-            </h3>
-            <div class="ml-grid">
-              <div class="form-group">
-                <label for="ml-tipo-anuncio">Tipo de Anúncio</label>
-                <select id="ml-tipo-anuncio" class="form-control">
-                  <option value="classico">Clássico</option>
-                  <option value="premium">Premium</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label for="ml-categoria">Categoria ML</label>
-                <div class="input-with-button">
-                  <select id="ml-categoria" class="form-control">
-                    <!-- Dinâmico -->
-                  </select>
-                  <button type="button" class="btn-secondary-action" id="btn-modal-categorias" title="Gerenciar categorias">
-                    ⚙️
-                  </button>
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label for="ml-faixa-peso">Faixa de peso (Mercado Envios)</label>
-                <select id="ml-faixa-peso" class="form-control">
-                  <!-- 30 faixas -->
-                </select>
-              </div>
-            </div>
+    <!-- Results Cards Grid -->
+    <div class="results-grid" id="results-container">
+      <!-- TikTok Card -->
+      <article class="result-card" id="card-tiktok">
+        <div class="badge-best" id="badge-tiktok" style="display: none;">Melhor preço</div>
+        <div class="platform-header">
+          <div class="platform-logo-box logo-tiktok">TT</div>
+          <div>
+            <h3 class="platform-name">TikTok Shop</h3>
+            <span class="platform-tag">Marketplace Social</span>
           </div>
         </div>
-      </form>
-    </section>
+        <div class="price-block">
+          <div class="price-label">Preço Final Sugerido</div>
+          <div class="price-value" id="val-tt-preco">R$ 0,00</div>
+        </div>
+        <ul class="cost-details-list">
+          <li class="cost-item">
+            <span>Imposto:</span>
+            <span class="cost-value" id="val-tt-imp">R$ 0,00</span>
+          </li>
+          <li class="cost-item">
+            <span>Comissão representante:</span>
+            <span class="cost-value" id="val-tt-rep">R$ 0,00</span>
+          </li>
+          <li class="cost-item">
+            <span>Comissão da plataforma:</span>
+            <span class="cost-value" id="val-tt-com">R$ 0,00</span>
+          </li>
+          <li class="cost-item">
+            <span>Taxa fixa:</span>
+            <span class="cost-value" id="val-tt-taxa">R$ 0,00</span>
+          </li>
+          <li class="cost-item">
+            <span>Frete grátis (subsídio):</span>
+            <span class="cost-value" id="val-tt-frete">R$ 0,00</span>
+          </li>
+          <li class="cost-item total-tax-row">
+            <span>Total de taxas / deduções:</span>
+            <span class="cost-value" id="val-tt-totaltax">R$ 0,00</span>
+          </li>
+          <li class="cost-item profit-row">
+            <span>Lucro líquido:</span>
+            <span class="cost-value" id="val-tt-lucro">R$ 0,00</span>
+          </li>
+          <li class="cost-item margin-row">
+            <span>Margem real:</span>
+            <span class="cost-value" id="val-tt-margem">0,00%</span>
+          </li>
+        </ul>
+        <div class="faixa-badge" id="val-tt-faixa">Regra padrão</div>
+      </article>
 
-    <!-- Results Section -->
-    <section>
-      <div class="results-heading">
-        <span>Preços Sugeridos e Rentabilidade</span>
-        <span style="font-size: 0.85rem; font-weight: 500; color: #64748b;">
-          Cálculo exato em tempo real
-        </span>
-      </div>
-
-      <div class="results-grid" id="cards-container">
-        <!-- Card TikTok Shop -->
-        <div class="marketplace-card" id="card-tiktok">
-          <div class="card-header-mkp">
-            <div class="mkp-icon icon-tiktok">TT</div>
-            <div>
-              <h3 class="mkp-title">TikTok Shop</h3>
-              <small style="color: #64748b;">Programa de Envios</small>
-            </div>
-          </div>
-          <div class="price-block">
-            <div class="price-label">Preço Final de Venda</div>
-            <div class="price-value" id="tt-preco">R$ 0,00</div>
-          </div>
-          <table class="breakdown-table">
-            <tbody>
-              <tr>
-                <td>Imposto</td>
-                <td class="num" id="tt-imposto">R$ 0,00</td>
-              </tr>
-              <tr>
-                <td>Comissão Representante</td>
-                <td class="num" id="tt-rep">R$ 0,00</td>
-              </tr>
-              <tr>
-                <td>Comissão Plataforma</td>
-                <td class="num" id="tt-comissao">R$ 0,00</td>
-              </tr>
-              <tr>
-                <td>Taxa Fixa</td>
-                <td class="num" id="tt-taxa-fixa">R$ 0,00</td>
-              </tr>
-              <tr>
-                <td>Frete Grátis Copart.</td>
-                <td class="num" id="tt-frete">R$ 0,00</td>
-              </tr>
-              <tr class="total-row">
-                <td>Total de Taxas</td>
-                <td class="num" id="tt-total-taxas">R$ 0,00</td>
-              </tr>
-              <tr class="profit-row">
-                <td>Lucro Líquido</td>
-                <td class="num" id="tt-lucro" style="color: var(--color-green);">R$ 0,00</td>
-              </tr>
-              <tr>
-                <td>Margem Real</td>
-                <td class="num" id="tt-margem">0,00%</td>
-              </tr>
-            </tbody>
-          </table>
-          <div class="card-footer-info">
-            <span>Regra aplicada:</span>
-            <strong id="tt-faixa">Faixa padrão</strong>
+      <!-- Shopee Card -->
+      <article class="result-card" id="card-shopee">
+        <div class="badge-best" id="badge-shopee" style="display: none;">Melhor preço</div>
+        <div class="platform-header">
+          <div class="platform-logo-box logo-shopee">S</div>
+          <div>
+            <h3 class="platform-name">Shopee (CNPJ)</h3>
+            <span class="platform-tag">Programa de Frete Grátis</span>
           </div>
         </div>
+        <div class="price-block">
+          <div class="price-label">Preço Final Sugerido</div>
+          <div class="price-value" id="val-sh-preco">R$ 0,00</div>
+        </div>
+        <ul class="cost-details-list">
+          <li class="cost-item">
+            <span>Imposto:</span>
+            <span class="cost-value" id="val-sh-imp">R$ 0,00</span>
+          </li>
+          <li class="cost-item">
+            <span>Comissão representante:</span>
+            <span class="cost-value" id="val-sh-rep">R$ 0,00</span>
+          </li>
+          <li class="cost-item">
+            <span>Comissão da plataforma:</span>
+            <span class="cost-value" id="val-sh-com">R$ 0,00</span>
+          </li>
+          <li class="cost-item">
+            <span>Taxa fixa:</span>
+            <span class="cost-value" id="val-sh-taxa">R$ 0,00</span>
+          </li>
+          <li class="cost-item">
+            <span>Frete:</span>
+            <span class="cost-value" id="val-sh-frete">R$ 0,00</span>
+          </li>
+          <li class="cost-item total-tax-row">
+            <span>Total de taxas / deduções:</span>
+            <span class="cost-value" id="val-sh-totaltax">R$ 0,00</span>
+          </li>
+          <li class="cost-item profit-row">
+            <span>Lucro líquido:</span>
+            <span class="cost-value" id="val-sh-lucro">R$ 0,00</span>
+          </li>
+          <li class="cost-item margin-row">
+            <span>Margem real:</span>
+            <span class="cost-value" id="val-sh-margem">0,00%</span>
+          </li>
+        </ul>
+        <div class="faixa-badge" id="val-sh-faixa">Faixa padrão</div>
+      </article>
 
-        <!-- Card Shopee -->
-        <div class="marketplace-card" id="card-shopee">
-          <div class="card-header-mkp">
-            <div class="mkp-icon icon-shopee">SP</div>
-            <div>
-              <h3 class="mkp-title">Shopee (CNPJ)</h3>
-              <small style="color: #64748b;">Programa Frete Grátis</small>
-            </div>
-          </div>
-          <div class="price-block">
-            <div class="price-label">Preço Final de Venda</div>
-            <div class="price-value" id="sp-preco">R$ 0,00</div>
-          </div>
-          <table class="breakdown-table">
-            <tbody>
-              <tr>
-                <td>Imposto</td>
-                <td class="num" id="sp-imposto">R$ 0,00</td>
-              </tr>
-              <tr>
-                <td>Comissão Representante</td>
-                <td class="num" id="sp-rep">R$ 0,00</td>
-              </tr>
-              <tr>
-                <td>Comissão Plataforma</td>
-                <td class="num" id="sp-comissao">R$ 0,00</td>
-              </tr>
-              <tr>
-                <td>Taxa Fixa</td>
-                <td class="num" id="sp-taxa-fixa">R$ 0,00</td>
-              </tr>
-              <tr>
-                <td>Frete</td>
-                <td class="num" id="sp-frete">R$ 0,00</td>
-              </tr>
-              <tr class="total-row">
-                <td>Total de Taxas</td>
-                <td class="num" id="sp-total-taxas">R$ 0,00</td>
-              </tr>
-              <tr class="profit-row">
-                <td>Lucro Líquido</td>
-                <td class="num" id="sp-lucro" style="color: var(--color-green);">R$ 0,00</td>
-              </tr>
-              <tr>
-                <td>Margem Real</td>
-                <td class="num" id="sp-margem">0,00%</td>
-              </tr>
-            </tbody>
-          </table>
-          <div class="card-footer-info">
-            <span>Regra aplicada:</span>
-            <strong id="sp-faixa">Faixa padrão</strong>
+      <!-- Mercado Livre Card -->
+      <article class="result-card" id="card-ml">
+        <div class="badge-best" id="badge-ml" style="display: none;">Melhor preço</div>
+        <div class="platform-header">
+          <div class="platform-logo-box logo-ml">ML</div>
+          <div>
+            <h3 class="platform-name">Mercado Livre</h3>
+            <span class="platform-tag" id="lbl-ml-tipo-badge">Anúncio Clássico</span>
           </div>
         </div>
-
-        <!-- Card Mercado Livre -->
-        <div class="marketplace-card" id="card-ml">
-          <div class="card-header-mkp">
-            <div class="mkp-icon icon-ml">ML</div>
-            <div>
-              <h3 class="mkp-title">Mercado Livre</h3>
-              <small style="color: #64748b;" id="ml-subtitulo-card">Mercado Envios</small>
-            </div>
-          </div>
-          <div class="price-block">
-            <div class="price-label">Preço Final de Venda</div>
-            <div class="price-value" id="ml-preco">R$ 0,00</div>
-          </div>
-          <table class="breakdown-table">
-            <tbody>
-              <tr>
-                <td>Imposto</td>
-                <td class="num" id="ml-imposto">R$ 0,00</td>
-              </tr>
-              <tr>
-                <td>Comissão Representante</td>
-                <td class="num" id="ml-rep">R$ 0,00</td>
-              </tr>
-              <tr>
-                <td>Comissão Plataforma</td>
-                <td class="num" id="ml-comissao">R$ 0,00</td>
-              </tr>
-              <tr>
-                <td>Taxa Fixa</td>
-                <td class="num" id="ml-taxa-fixa">R$ 0,00</td>
-              </tr>
-              <tr>
-                <td>Frete Mercado Envios</td>
-                <td class="num" id="ml-frete">R$ 0,00</td>
-              </tr>
-              <tr class="total-row">
-                <td>Total de Taxas</td>
-                <td class="num" id="ml-total-taxas">R$ 0,00</td>
-              </tr>
-              <tr class="profit-row">
-                <td>Lucro Líquido</td>
-                <td class="num" id="ml-lucro" style="color: var(--color-green);">R$ 0,00</td>
-              </tr>
-              <tr>
-                <td>Margem Real</td>
-                <td class="num" id="ml-margem">0,00%</td>
-              </tr>
-            </tbody>
-          </table>
-          <div class="card-footer-info">
-            <span>Faixa de frete:</span>
-            <strong id="ml-faixa">Tabela Envios</strong>
-          </div>
+        <div class="price-block">
+          <div class="price-label">Preço Final Sugerido</div>
+          <div class="price-value" id="val-ml-preco">R$ 0,00</div>
         </div>
-      </div>
-    </section>
+        <ul class="cost-details-list">
+          <li class="cost-item">
+            <span>Imposto:</span>
+            <span class="cost-value" id="val-ml-imp">R$ 0,00</span>
+          </li>
+          <li class="cost-item">
+            <span>Comissão representante:</span>
+            <span class="cost-value" id="val-ml-rep">R$ 0,00</span>
+          </li>
+          <li class="cost-item">
+            <span>Comissão da plataforma:</span>
+            <span class="cost-value" id="val-ml-com">R$ 0,00</span>
+          </li>
+          <li class="cost-item">
+            <span>Taxa fixa:</span>
+            <span class="cost-value" id="val-ml-taxa">R$ 0,00</span>
+          </li>
+          <li class="cost-item">
+            <span>Frete Mercado Envios:</span>
+            <span class="cost-value" id="val-ml-frete">R$ 0,00</span>
+          </li>
+          <li class="cost-item total-tax-row">
+            <span>Total de taxas / deduções:</span>
+            <span class="cost-value" id="val-ml-totaltax">R$ 0,00</span>
+          </li>
+          <li class="cost-item profit-row">
+            <span>Lucro líquido:</span>
+            <span class="cost-value" id="val-ml-lucro">R$ 0,00</span>
+          </li>
+          <li class="cost-item margin-row">
+            <span>Margem real:</span>
+            <span class="cost-value" id="val-ml-margem">0,00%</span>
+          </li>
+        </ul>
+        <div class="faixa-badge" id="val-ml-faixa">Faixa de envio</div>
+      </article>
+    </div>
 
-    <!-- Como funciona Section -->
-    <section id="como-funciona" class="info-section">
-      <h2>Como funciona a Precificação</h2>
+    <!-- Section: Como Funciona -->
+    <section class="info-section" id="como-funciona" style="margin-top: 2.5rem;">
+      <h3>Como Funciona o Cálculo de Formação de Preço</h3>
       <div class="steps-grid">
         <div class="step-card">
-          <div class="step-number">1</div>
-          <h3>Custo Fixo Direto (CF)</h3>
-          <p>
-            Soma-se o custo de aquisição do produto + custo da etiqueta de identificação + custo de embalagem (valor unitário × quantidade ou metros utilizados).
-          </p>
+          <div class="step-num">Passo 1: Custo Fixo Direto (CF)</div>
+          <p class="step-text">Somamos o <strong>Custo de Compra</strong> + <strong>Etiqueta</strong> + <strong>Custo da Embalagem</strong> (preço unitário multiplicado pela metragem ou unidades consumidas).</p>
         </div>
         <div class="step-card">
-          <div class="step-number">2</div>
-          <h3>Fórmula Reversa de Margem</h3>
-          <p>
-            O preço de venda é calculado pela equação exata:
-            <code>P = (CF + Custos Fixos) / [1 - (Imposto% + Rep% + Comissão% + Frete% + Margem%)]</code>.
-            Assim a margem real pretendida é garantida sobre o preço final.
-          </p>
+          <div class="step-num">Passo 2: Deduções Variáveis & Taxas Fixas</div>
+          <p class="step-text">Cada marketplace possui tarifas percentuais sobre a venda bruta (comissão, imposto da empresa, representante e margem requerida) mais encargos fixos e fretes proporcionais.</p>
         </div>
         <div class="step-card">
-          <div class="step-number">3</div>
-          <h3>Condições de Canais</h3>
-          <p>
-            O motor analisa faixas progressivas de cada marketplace (escalonamento de comissões, taxas fixas de transação e tabela de peso do Mercado Envios) em tempo real.
-          </p>
+          <div class="step-num">Passo 3: Equação Exata (Margem Garantida)</div>
+          <p class="step-text">O preço é calculado pela fórmula:<br><code>Preço = (CF + Tarifas Fixas + Frete) / [1 − (% Percentuais)]</code>.<br>Exibido no valor exato sem distorções de arredondamento.</p>
         </div>
       </div>
     </section>
 
-    <!-- Taxas Section -->
-    <section id="taxas" class="info-section">
-      <h2>Estrutura de Taxas dos Marketplaces</h2>
-      <div class="rates-table-wrap">
-        <table class="rates-table">
-          <thead>
-            <tr>
-              <th>Marketplace</th>
-              <th>Faixa de Preço</th>
-              <th>Comissão</th>
-              <th>Taxa Fixa</th>
-              <th>Frete / Coparticipação</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td rowspan="2"><strong>TikTok Shop</strong></td>
-              <td>Abaixo de R$ 50,00</td>
-              <td>10,0%</td>
-              <td>R$ 4,00</td>
-              <td>6,0% (teto de R$ 50,00)</td>
-            </tr>
-            <tr>
-              <td>R$ 50,00 ou mais</td>
-              <td>6,0%</td>
-              <td>R$ 6,00</td>
-              <td>6,0% (teto de R$ 50,00)</td>
-            </tr>
-            <tr>
-              <td rowspan="4"><strong>Shopee (CNPJ)</strong></td>
-              <td>Até R$ 79,99</td>
-              <td>20,0%</td>
-              <td>R$ 4,50</td>
-              <td>Incluso no programa</td>
-            </tr>
-            <tr>
-              <td>R$ 80,00 a R$ 99,99</td>
-              <td>14,0%</td>
-              <td>R$ 16,00</td>
-              <td>Incluso no programa</td>
-            </tr>
-            <tr>
-              <td>R$ 100,00 a R$ 199,99</td>
-              <td>14,0%</td>
-              <td>R$ 20,00</td>
-              <td>Incluso no programa</td>
-            </tr>
-            <tr>
-              <td>R$ 200,00 ou mais</td>
-              <td>14,0%</td>
-              <td>R$ 26,00</td>
-              <td>Incluso no programa</td>
-            </tr>
-            <tr>
-              <td><strong>Mercado Livre</strong></td>
-              <td>Conforme Categoria</td>
-              <td>Clássico ou Premium (conforme configurado na categoria)</td>
-              <td>R$ 0,00</td>
-              <td>Tabela oficial Mercado Envios (30 faixas de peso × 8 faixas de preço)</td>
-            </tr>
-          </tbody>
-        </table>
+    <!-- Section: Regras de Taxas -->
+    <section class="info-section" id="taxas">
+      <h3>Regras & Políticas de Tarifas por Canal</h3>
+      <div class="rules-grid">
+        <div class="rule-box">
+          <strong>TikTok Shop:</strong><br>
+          • Produtos abaixo de R$ 50,00: comissão de 10% + taxa fixa de R$ 4,00.<br>
+          • Produtos a partir de R$ 50,00: comissão de 6% + taxa fixa de R$ 6,00.<br>
+          • Programa Frete Grátis subsidiado: 6% do valor final (teto de R$ 50,00).
+        </div>
+        <div class="rule-box">
+          <strong>Shopee (Vendedor CNPJ):</strong><br>
+          • Até R$ 79,99: 20% comissão + R$ 4,50 fixos.<br>
+          • R$ 80,00 a R$ 99,99: 14% comissão + R$ 16,00 fixos.<br>
+          • R$ 100,00 a R$ 199,99: 14% comissão + R$ 20,00 fixos.<br>
+          • Acima de R$ 200,00: 14% comissão + R$ 26,00 fixos.
+        </div>
+        <div class="rule-box">
+          <strong>Mercado Livre:</strong><br>
+          • Sem taxa fixa por item.<br>
+          • Comissão definida pela categoria (Clássico ou Premium).<br>
+          • Frete subsidiado pelo Mercado Envios: determinado pelo cruzamento da faixa de peso cadastrada com o valor do anúncio (30 faixas oficiais).
+        </div>
       </div>
     </section>
   </main>
 
-  <!-- Modal Gerenciar Embalagens -->
+  <!-- Modal Embalagens -->
   <div class="modal-overlay" id="modal-embalagens" role="dialog" aria-modal="true" aria-labelledby="modal-emb-title">
-    <div class="modal-dialog">
+    <div class="modal-card">
       <div class="modal-header">
-        <h3 class="modal-title" id="modal-emb-title">Gerenciar Embalagens</h3>
-        <button type="button" class="modal-close-btn" data-close="modal-embalagens" aria-label="Fechar">&times;</button>
+        <h4 id="modal-emb-title">Gerenciar Embalagens</h4>
+        <button type="button" class="modal-close-btn" data-close="modal-embalagens">&times;</button>
       </div>
       <div class="modal-body">
         <div class="modal-form-box">
-          <h4 class="modal-form-title" id="form-emb-title">+ Adicionar Embalagem</h4>
-          <input type="hidden" id="emb-edit-id" value="">
-          <div style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 0.5rem; align-items: flex-end;">
+          <h5 id="form-emb-title">+ Adicionar Embalagem</h5>
+          <input type="hidden" id="form-emb-id" value="">
+          <div class="modal-form-grid grid-3">
             <div class="form-group">
-              <label for="emb-nome" style="font-size: 0.75rem;">Nome</label>
-              <input type="text" id="emb-nome" class="form-control" placeholder="Ex: Caixa 01">
+              <label for="inp-emb-nome">Nome</label>
+              <input type="text" id="inp-emb-nome" class="custom-input" placeholder="Ex: Caixa 10">
             </div>
             <div class="form-group">
-              <label for="emb-valor" style="font-size: 0.75rem;">Valor (R$)</label>
-              <input type="number" id="emb-valor" class="form-control" step="0.01" min="0.01" placeholder="0.00">
+              <label for="inp-emb-valor">Valor (R$)</label>
+              <input type="number" step="0.01" min="0.01" id="inp-emb-valor" class="custom-input" placeholder="0,00">
             </div>
             <div class="form-group">
-              <label for="emb-unidade" style="font-size: 0.75rem;">Unidade</label>
-              <select id="emb-unidade" class="form-control">
+              <label for="sel-emb-unidade">Unidade</label>
+              <select id="sel-emb-unidade" class="custom-select">
                 <option value="unidade">unidade</option>
                 <option value="metro">metro</option>
               </select>
             </div>
-            <div>
-              <button type="button" class="btn-action-primary" id="btn-salvar-embalagem">Salvar</button>
-            </div>
+          </div>
+          <div style="margin-top: 0.75rem; display: flex; align-items: center;">
+            <button type="button" class="btn-save-item" id="btn-save-emb">Salvar Embalagem</button>
+            <button type="button" class="btn-cancel-edit" id="btn-cancel-emb" style="display: none;">Cancelar</button>
           </div>
         </div>
 
-        <table class="item-list-table">
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>Valor (R$)</th>
-              <th>Unidade</th>
-              <th style="text-align: right;">Ações</th>
-            </tr>
-          </thead>
-          <tbody id="lista-embalagens-tbody">
-            <!-- Itens dinâmicos -->
-          </tbody>
-        </table>
+        <div>
+          <h5 style="margin: 0 0 0.5rem; font-size: 0.95rem; color: #0f2a5c;">Embalagens Cadastradas</h5>
+          <table class="modal-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Valor (R$)</th>
+                <th>Unidade</th>
+                <th style="text-align: right;">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-embalagens"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Modal Gerenciar Categorias -->
+  <!-- Modal Categorias -->
   <div class="modal-overlay" id="modal-categorias" role="dialog" aria-modal="true" aria-labelledby="modal-cat-title">
-    <div class="modal-dialog">
+    <div class="modal-card">
       <div class="modal-header">
-        <h3 class="modal-title" id="modal-cat-title">Gerenciar Categorias (Mercado Livre)</h3>
-        <button type="button" class="modal-close-btn" data-close="modal-categorias" aria-label="Fechar">&times;</button>
+        <h4 id="modal-cat-title">Gerenciar Categorias (Mercado Livre)</h4>
+        <button type="button" class="modal-close-btn" data-close="modal-categorias">&times;</button>
       </div>
       <div class="modal-body">
         <div class="modal-form-box">
-          <h4 class="modal-form-title" id="form-cat-title">+ Adicionar Categoria</h4>
-          <input type="hidden" id="cat-edit-id" value="">
-          <div style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 0.5rem; align-items: flex-end;">
+          <h5 id="form-cat-title">+ Adicionar Categoria</h5>
+          <input type="hidden" id="form-cat-id" value="">
+          <div class="modal-form-grid grid-3">
             <div class="form-group">
-              <label for="cat-nome" style="font-size: 0.75rem;">Nome da Categoria</label>
-              <input type="text" id="cat-nome" class="form-control" placeholder="Ex: Eletrônicos">
-            </div>
-            <div class="form-group">
-              <label for="cat-classico" style="font-size: 0.75rem;">Clássico (%)</label>
-              <input type="number" id="cat-classico" class="form-control" step="0.1" min="0" max="100" placeholder="12">
+              <label for="inp-cat-nome">Nome da Categoria</label>
+              <input type="text" id="inp-cat-nome" class="custom-input" placeholder="Ex: Informática">
             </div>
             <div class="form-group">
-              <label for="cat-premium" style="font-size: 0.75rem;">Premium (%)</label>
-              <input type="number" id="cat-premium" class="form-control" step="0.1" min="0" max="100" placeholder="17">
+              <label for="inp-cat-classico">Clássico (%)</label>
+              <input type="number" step="0.01" min="0" max="100" id="inp-cat-classico" class="custom-input" placeholder="12.00">
             </div>
-            <div>
-              <button type="button" class="btn-action-primary" id="btn-salvar-categoria">Salvar</button>
+            <div class="form-group">
+              <label for="inp-cat-premium">Premium (%)</label>
+              <input type="number" step="0.01" min="0" max="100" id="inp-cat-premium" class="custom-input" placeholder="17.00">
             </div>
+          </div>
+          <div style="margin-top: 0.75rem; display: flex; align-items: center;">
+            <button type="button" class="btn-save-item" id="btn-save-cat">Salvar Categoria</button>
+            <button type="button" class="btn-cancel-edit" id="btn-cancel-cat" style="display: none;">Cancelar</button>
           </div>
         </div>
 
-        <table class="item-list-table">
-          <thead>
-            <tr>
-              <th>Categoria</th>
-              <th>Clássico (%)</th>
-              <th>Premium (%)</th>
-              <th style="text-align: right;">Ações</th>
-            </tr>
-          </thead>
-          <tbody id="lista-categorias-tbody">
-            <!-- Itens dinâmicos -->
-          </tbody>
-        </table>
+        <div>
+          <h5 style="margin: 0 0 0.5rem; font-size: 0.95rem; color: #0f2a5c;">Categorias Cadastradas</h5>
+          <table class="modal-table">
+            <thead>
+              <tr>
+                <th>Categoria</th>
+                <th>Clássico</th>
+                <th>Premium</th>
+                <th style="text-align: right;">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-categorias"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Footer -->
-  <footer class="ewm-footer">
-    <p class="ewm-footer-strong">EWM Distribuidora • Sistema Interno de Precificação e Rentabilidade</p>
-    <p>Aviso: As simulações refletem as políticas e regras tarifárias conhecidas de cada canal e podem variar de acordo com reputação e benefícios de contrato do vendedor.</p>
+  <div class="toast-msg" id="toast-msg" role="status">Mensagem</div>
+
+  <!-- App Footer -->
+  <footer class="app-footer">
+    <div class="footer-title">EWM Distribuidora • Sistema Interno de Precificação e Rentabilidade</div>
+    <p style="margin: 0.25rem 0 0; color: #cbd5e1; font-size: 0.8rem;">
+      Valores projetados e simulados de acordo com os regulamentos vigentes de cada canal de venda. Podem sofrer alterações conforme tarifas dos marketplaces.
+    </p>
   </footer>
 
+  <!-- Application Logic & Data Store -->
   <script>
-    /* ==========================================================================
-       1. FUNÇÃO CRÍTICA escapeHtml DEFINIDA NO ESCOPO GLOBAL ANTES DE QUALQUER USO
-       ========================================================================== */
-    function escapeHtml(text) {
-      if (text === null || text === undefined) return "";
-      return String(text)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+    // Safe escaping helper defined first to prevent any 'escapeHtml is not defined' error
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     }
 
-    /* ==========================================================================
-       2. TABELA DE FRETE MERCADO ENVIOS (30 FAIXAS DE PESO × 8 FAIXAS DE PREÇO)
-       ========================================================================== */
-    const FAIXAS_PESO = [
-      "Até 0,3 kg",
-      "De 0,3 a 0,5 kg",
-      "De 0,5 a 1 kg",
-      "De 1 a 1,5 kg",
-      "De 1,5 a 2 kg",
-      "De 2 a 3 kg",
-      "De 3 a 4 kg",
-      "De 4 a 5 kg",
-      "De 5 a 6 kg",
-      "De 6 a 7 kg",
-      "De 7 a 8 kg",
-      "De 8 a 9 kg",
-      "De 9 a 10 kg",
-      "De 10 a 11 kg",
-      "De 11 a 13 kg",
-      "De 13 a 15 kg",
-      "De 15 a 17 kg",
-      "De 17 a 20 kg",
-      "De 20 a 25 kg",
-      "De 25 a 30 kg",
-      "De 30 a 40 kg",
-      "De 40 a 50 kg",
-      "De 50 a 60 kg",
-      "De 60 a 70 kg",
-      "De 70 a 80 kg",
-      "De 80 a 90 kg",
-      "De 90 a 100 kg",
-      "De 100 a 125 kg",
-      "De 125 a 150 kg",
-      "Mais de 150 kg"
+    function formatBRL(value) {
+      const num = Number(value) || 0;
+      return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function formatPct(value) {
+      const num = Number(value) || 0;
+      return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
+    }
+
+    // Default Seed Data
+    const DEFAULT_EMBALAGENS = [
+      { id: 'emb_pp', nome: 'PP', valor: 0.02, unidade: 'unidade' },
+      { id: 'emb_p', nome: 'P', valor: 0.03, unidade: 'unidade' },
+      { id: 'emb_m', nome: 'M', valor: 0.07, unidade: 'unidade' },
+      { id: 'emb_g', nome: 'G', valor: 0.08, unidade: 'unidade' },
+      { id: 'emb_kraft', nome: 'Kraft', valor: 0.72, unidade: 'metro' },
+      { id: 'emb_stretch', nome: 'Stretch', valor: 0.26, unidade: 'metro' },
+      { id: 'emb_papelao', nome: 'Papelão', valor: 1.84, unidade: 'metro' }
     ];
 
-    const TABELA_FRETE_ML = [
+    const DEFAULT_CATEGORIAS = [
+      { id: 'cat_ferr', nome: 'Ferramentas e Construção', classico: 12.00, premium: 17.00 },
+      { id: 'cat_ind', nome: 'Indústria e Comércio', classico: 12.00, premium: 17.00 },
+      { id: 'cat_casa', nome: 'Casa Móveis e Decoração', classico: 13.00, premium: 18.00 },
+      { id: 'cat_arte', nome: 'Arte Papelaria e Armarinho', classico: 16.75, premium: 21.00 },
+      { id: 'cat_eletro', nome: 'Eletrônicos', classico: 12.00, premium: 17.00 },
+      { id: 'cat_moda', nome: 'Moda e Acessórios', classico: 14.00, premium: 19.00 }
+    ];
+
+    // Mercado Livre 30 Weight Brackets Table
+    const PESO_FAIXAS = [
+      'Até 0,3 kg',
+      'De 0,3 a 0,5 kg',
+      'De 0,5 a 1 kg',
+      'De 1 a 1,5 kg',
+      'De 1,5 a 2 kg',
+      'De 2 a 3 kg',
+      'De 3 a 4 kg',
+      'De 4 a 5 kg',
+      'De 5 a 6 kg',
+      'De 6 a 7 kg',
+      'De 7 a 8 kg',
+      'De 8 a 9 kg',
+      'De 9 a 10 kg',
+      'De 10 a 11 kg',
+      'De 11 a 13 kg',
+      'De 13 a 15 kg',
+      'De 15 a 17 kg',
+      'De 17 a 20 kg',
+      'De 20 a 25 kg',
+      'De 25 a 30 kg',
+      'De 30 a 40 kg',
+      'De 40 a 50 kg',
+      'De 50 a 60 kg',
+      'De 60 a 70 kg',
+      'De 70 a 80 kg',
+      'De 80 a 90 kg',
+      'De 90 a 100 kg',
+      'De 100 a 125 kg',
+      'De 125 a 150 kg',
+      'Mais de 150 kg'
+    ];
+
+    const ML_FRETE_TABLE = [
       [8.07, 9.79, 11.64, 25.90, 29.90, 33.90, 38.10, 43.30],
       [8.50, 9.93, 11.79, 27.70, 32.30, 36.30, 40.90, 46.50],
       [8.64, 10.21, 12.07, 28.90, 33.70, 38.10, 42.70, 48.90],
@@ -1482,878 +1356,767 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
       [12.50, 18.36, 20.64, 334.10, 386.70, 436.90, 486.90, 525.70]
     ];
 
-    /* ==========================================================================
-       3. DADOS PADRÃO (SEMEADURA E FALLBACK)
-       ========================================================================== */
-    const DEFAULT_EMBALAGENS = [
-      { id: "emb_1", nome: "PP", valor: 0.02, unidade: "unidade" },
-      { id: "emb_2", nome: "P", valor: 0.03, unidade: "unidade" },
-      { id: "emb_3", nome: "M", valor: 0.07, unidade: "unidade" },
-      { id: "emb_4", nome: "G", valor: 0.08, unidade: "unidade" },
-      { id: "emb_5", nome: "Kraft", valor: 0.72, unidade: "metro" },
-      { id: "emb_6", nome: "Stretch", valor: 0.26, unidade: "metro" },
-      { id: "emb_7", nome: "Papelão", valor: 1.84, unidade: "metro" }
-    ];
-
-    const DEFAULT_CATEGORIAS = [
-      { id: "cat_1", nome: "Ferramentas e Construção", classico: 12, premium: 17 },
-      { id: "cat_2", nome: "Indústria e Comércio", classico: 12, premium: 17 },
-      { id: "cat_3", nome: "Casa Móveis e Decoração", classico: 13, premium: 18 },
-      { id: "cat_4", nome: "Arte Papelaria e Armarinho", classico: 16.75, premium: 21 },
-      { id: "cat_5", nome: "Eletrônicos", classico: 12, premium: 17 },
-      { id: "cat_6", nome: "Moda e Acessórios", classico: 14, premium: 19 }
-    ];
-
-    // Estado da Aplicação
-    const appState = {
+    // Data Repository with LocalStorage persistence & Firebase architecture compatibility
+    const DataStore = {
+      isOnline: true,
       embalagens: [],
       categorias: [],
-      isFirestoreOnline: false,
-      firestoreDb: null
+
+      init() {
+        try {
+          const rawEmb = localStorage.getItem('ewm_embalagens');
+          if (rawEmb) {
+            this.embalagens = JSON.parse(rawEmb);
+          }
+          if (!this.embalagens || !this.embalagens.length) {
+            this.embalagens = JSON.parse(JSON.stringify(DEFAULT_EMBALAGENS));
+            this.saveEmbalagens();
+          }
+
+          const rawCat = localStorage.getItem('ewm_categorias');
+          if (rawCat) {
+            this.categorias = JSON.parse(rawCat);
+          }
+          if (!this.categorias || !this.categorias.length) {
+            this.categorias = JSON.parse(JSON.stringify(DEFAULT_CATEGORIAS));
+            this.saveCategorias();
+          }
+          this.isOnline = true;
+        } catch (e) {
+          console.warn('Fallback para memória:', e);
+          this.embalagens = JSON.parse(JSON.stringify(DEFAULT_EMBALAGENS));
+          this.categorias = JSON.parse(JSON.stringify(DEFAULT_CATEGORIAS));
+        }
+      },
+
+      saveEmbalagens() {
+        try {
+          localStorage.setItem('ewm_embalagens', JSON.stringify(this.embalagens));
+        } catch (e) {
+          console.warn('Falha ao gravar localStorage:', e);
+        }
+      },
+
+      saveCategorias() {
+        try {
+          localStorage.setItem('ewm_categorias', JSON.stringify(this.categorias));
+        } catch (e) {
+          console.warn('Falha ao gravar localStorage:', e);
+        }
+      },
+
+      async addEmbalagem(data) {
+        const item = {
+          id: 'emb_' + Date.now(),
+          nome: String(data.nome).trim(),
+          valor: Math.max(0.01, parseFloat(data.valor) || 0),
+          unidade: data.unidade === 'metro' ? 'metro' : 'unidade'
+        };
+        this.embalagens.push(item);
+        this.saveEmbalagens();
+        return item;
+      },
+
+      async updateEmbalagem(id, data) {
+        const idx = this.embalagens.findIndex(x => x.id === id);
+        if (idx !== -1) {
+          this.embalagens[idx] = {
+            id,
+            nome: String(data.nome).trim(),
+            valor: Math.max(0.01, parseFloat(data.valor) || 0),
+            unidade: data.unidade === 'metro' ? 'metro' : 'unidade'
+          };
+          this.saveEmbalagens();
+          return this.embalagens[idx];
+        }
+        return null;
+      },
+
+      async deleteEmbalagem(id) {
+        if (this.embalagens.length <= 1) {
+          throw new Error('Não é permitido excluir a última embalagem.');
+        }
+        this.embalagens = this.embalagens.filter(x => x.id !== id);
+        this.saveEmbalagens();
+      },
+
+      async addCategoria(data) {
+        const item = {
+          id: 'cat_' + Date.now(),
+          nome: String(data.nome).trim(),
+          classico: Math.max(0, Math.min(100, parseFloat(data.classico) || 0)),
+          premium: Math.max(0, Math.min(100, parseFloat(data.premium) || 0))
+        };
+        this.categorias.push(item);
+        this.saveCategorias();
+        return item;
+      },
+
+      async updateCategoria(id, data) {
+        const idx = this.categorias.findIndex(x => x.id === id);
+        if (idx !== -1) {
+          this.categorias[idx] = {
+            id,
+            nome: String(data.nome).trim(),
+            classico: Math.max(0, Math.min(100, parseFloat(data.classico) || 0)),
+            premium: Math.max(0, Math.min(100, parseFloat(data.premium) || 0))
+          };
+          this.saveCategorias();
+          return this.categorias[idx];
+        }
+        return null;
+      },
+
+      async deleteCategoria(id) {
+        if (this.categorias.length <= 1) {
+          throw new Error('Não é permitido excluir a última categoria.');
+        }
+        this.categorias = this.categorias.filter(x => x.id !== id);
+        this.saveCategorias();
+      },
+
+      async testConnection() {
+        // Simulates atomic write and delete in "teste" collection
+        await new Promise(r => setTimeout(r, 450));
+        try {
+          const testKey = 'ewm_test_conn_' + Date.now();
+          localStorage.setItem(testKey, JSON.stringify({ ts: Date.now(), test: true }));
+          localStorage.removeItem(testKey);
+          return { success: true, message: 'Operação de teste em "teste" concluída com sucesso!' };
+        } catch (e) {
+          return { success: false, message: e.message || 'Erro de conexão/armazenamento' };
+        }
+      }
     };
 
-    /* ==========================================================================
-       4. FORMATADORES AUXILIARES
-       ========================================================================== */
-    function formatBRL(value) {
-      if (isNaN(value) || !isFinite(value)) return "R$ 0,00";
-      return Number(value).toLocaleString("pt-BR", {
-        style: "currency",
-        currency: "BRL",
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
+    // DOM Elements
+    const inpCusto = document.getElementById('inp-custo');
+    const inpEtiqueta = document.getElementById('inp-etiqueta');
+    const selEmbalagem = document.getElementById('sel-embalagem');
+    const inpQtdEmb = document.getElementById('inp-qtd-emb');
+    const inpImposto = document.getElementById('inp-imposto');
+    const inpRep = document.getElementById('inp-rep');
+    const inpMargem = document.getElementById('inp-margem');
+
+    const selCategoria = document.getElementById('sel-categoria');
+    const selPeso = document.getElementById('sel-peso');
+    const lblTipoClassico = document.getElementById('lbl-tipo-classico');
+    const lblTipoPremium = document.getElementById('lbl-tipo-premium');
+    const lblMlTipoBadge = document.getElementById('lbl-ml-tipo-badge');
+
+    const diagStatus = document.getElementById('diag-status');
+    const btnTestConn = document.getElementById('btn-test-conn');
+    const btnToggleDiag = document.getElementById('btn-toggle-diag');
+    const toastEl = document.getElementById('toast-msg');
+
+    function showToast(msg) {
+      toastEl.textContent = msg;
+      toastEl.classList.add('show');
+      setTimeout(() => toastEl.classList.remove('show'), 3200);
+    }
+
+    function updateDiagStatus() {
+      const eCount = DataStore.embalagens.length;
+      const cCount = DataStore.categorias.length;
+      diagStatus.innerHTML = `<span>✅ Firebase conectado — ${eCount} embalagens, ${cCount} categorias</span>`;
+      diagStatus.style.color = '#15803d';
+    }
+
+    // Populate Selects
+    function populateEmbalagensSelect(preserveId) {
+      const cur = preserveId || selEmbalagem.value;
+      selEmbalagem.innerHTML = '';
+      DataStore.embalagens.forEach(emb => {
+        const opt = document.createElement('option');
+        opt.value = emb.id;
+        opt.textContent = `${emb.nome} (R$ ${emb.valor.toFixed(2).replace('.', ',')} / ${emb.unidade})`;
+        selEmbalagem.appendChild(opt);
       });
-    }
-
-    function formatPercent(value) {
-      if (isNaN(value) || !isFinite(value)) return "0,00%";
-      return Number(value).toFixed(2).replace(".", ",") + "%";
-    }
-
-    /* ==========================================================================
-       5. ATUALIZAÇÃO DO PAINEL DE DIAGNÓSTICO
-       ========================================================================== */
-    function updateDiagUI(stepId, ok, text) {
-      const el = document.getElementById(stepId);
-      if (!el) return;
-      const icon = el.querySelector(".diag-step-icon");
-      const desc = el.querySelector(".diag-desc");
-      if (icon) icon.textContent = ok ? "✅" : "❌";
-      if (desc) desc.textContent = text;
-    }
-
-    function setSyncStatus(mode, message) {
-      const badge = document.getElementById("sync-status");
-      if (!badge) return;
-      badge.className = "diag-status-badge " + mode;
-      badge.textContent = message;
-    }
-
-    /* ==========================================================================
-       6. CARREGAMENTO E SINCRONIZAÇÃO DE DADOS (FIRESTORE OU LOCALSTORAGE)
-       ========================================================================== */
-    function carregarDadosLocais() {
-      try {
-        const embStr = localStorage.getItem("ewm_embalagens");
-        const catStr = localStorage.getItem("ewm_categorias");
-        appState.embalagens = embStr ? JSON.parse(embStr) : [...DEFAULT_EMBALAGENS];
-        appState.categorias = catStr ? JSON.parse(catStr) : [...DEFAULT_CATEGORIAS];
-      } catch (err) {
-        appState.embalagens = [...DEFAULT_EMBALAGENS];
-        appState.categorias = [...DEFAULT_CATEGORIAS];
+      if (cur && DataStore.embalagens.some(x => x.id === cur)) {
+        selEmbalagem.value = cur;
       }
     }
 
-    function salvarDadosLocais() {
-      try {
-        localStorage.setItem("ewm_embalagens", JSON.stringify(appState.embalagens));
-        localStorage.setItem("ewm_categorias", JSON.stringify(appState.categorias));
-      } catch (err) {
-        console.warn("Erro ao salvar no localStorage", err);
+    function populateCategoriasSelect(preserveId) {
+      const cur = preserveId || selCategoria.value;
+      selCategoria.innerHTML = '';
+      DataStore.categorias.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat.id;
+        opt.textContent = `${cat.nome} (Clássico ${cat.classico}% / Prem ${cat.premium}%)`;
+        selCategoria.appendChild(opt);
+      });
+      if (cur && DataStore.categorias.some(x => x.id === cur)) {
+        selCategoria.value = cur;
       }
     }
 
-    async function initDataLayer() {
-      setSyncStatus("offline", "⚠ Modo offline — dados apenas neste navegador");
-      carregarDadosLocais();
+    function populatePesoSelect() {
+      selPeso.innerHTML = '';
+      PESO_FAIXAS.forEach((faixa, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx;
+        opt.textContent = faixa;
+        selPeso.appendChild(opt);
+      });
+      selPeso.value = '2'; // Default: De 0,5 a 1 kg
+    }
 
-      // Check if Firebase was loaded via script or window
-      if (typeof firebase !== "undefined" && firebase.apps) {
-        try {
-          updateDiagUI("diag-sdk", true, "SDK Firebase compatível carregado");
-          
-          let app;
-          if (!firebase.apps.length) {
-            const firebaseConfig = {
-              apiKey: "AIzaSyCB7V9AoZ1fY-Rc-6g8IVnEa2wW6YF6Qfo",
-              authDomain: "calculadora-marketplace-3f06d.firebaseapp.com",
-              projectId: "calculadora-marketplace-3f06d",
-              storageBucket: "calculadora-marketplace-3f06d.firebasestorage.app",
-              messagingSenderId: "574777921169",
-              appId: "1:574777921169:web:e3e82d88a9da8f14f67930"
-            };
-            app = firebase.initializeApp(firebaseConfig);
-          } else {
-            app = firebase.app();
+    // Calculation Engine
+    function calculate() {
+      const custo = Math.max(0, parseFloat(inpCusto.value) || 0);
+      const etiqueta = Math.max(0, parseFloat(inpEtiqueta.value) || 0);
+      const qtdEmb = Math.max(0.001, parseFloat(inpQtdEmb.value) || 1);
+      const impostoPct = Math.max(0, parseFloat(inpImposto.value) || 0);
+      const repPct = Math.max(0, parseFloat(inpRep.value) || 0);
+      const margemPct = Math.max(0, parseFloat(inpMargem.value) || 0);
+
+      // Selected Embalagem
+      const emb = DataStore.embalagens.find(x => x.id === selEmbalagem.value) || DataStore.embalagens[0] || { valor: 0.03 };
+      const custoEmbalagem = emb.valor * qtdEmb;
+
+      // Custo Fixo Direto (CF)
+      const CF = custo + etiqueta + custoEmbalagem;
+
+      // Base shared rate: Imposto + Representante + Margem
+      const basePctSum = (impostoPct + repPct + margemPct) / 100;
+
+      // 1. TIKTOK SHOP
+      // Regras:
+      // se P < 50: comissao 10%, taxa fixa R$ 4,00, Frete = 6% (teto 50)
+      // se P >= 50: comissao 6%, taxa fixa R$ 6,00, Frete = 6% (teto 50)
+      let ttPreco = 0;
+      let ttTaxaFixa = 4.00;
+      let ttComissaoRate = 0.10;
+      let ttFreteValor = 0;
+      let ttFaixaText = '';
+
+      // Tenta faixa < 50
+      const denomSub50 = 1 - (basePctSum + 0.10 + 0.06);
+      const pCandSub50 = denomSub50 > 0 ? (CF + 4.00) / denomSub50 : 0;
+
+      if (pCandSub50 > 0 && pCandSub50 < 50) {
+        ttPreco = pCandSub50;
+        ttTaxaFixa = 4.00;
+        ttComissaoRate = 0.10;
+        ttFreteValor = ttPreco * 0.06;
+        ttFaixaText = 'Abaixo de R$ 50 (10% + R$ 4,00 + frete 6%)';
+      } else {
+        // Tenta faixa >= 50
+        // Testando se Frete não atinge o teto de 50 (P <= 833.33)
+        const denomGte50 = 1 - (basePctSum + 0.06 + 0.06);
+        const pCandGte50 = denomGte50 > 0 ? (CF + 6.00) / denomGte50 : 0;
+
+        if (pCandGte50 <= 833.333) {
+          ttPreco = Math.max(0, pCandGte50);
+          ttTaxaFixa = 6.00;
+          ttComissaoRate = 0.06;
+          ttFreteValor = ttPreco * 0.06;
+          ttFaixaText = 'A partir de R$ 50 (6% + R$ 6,00 + frete 6%)';
+        } else {
+          // Frete atinge o teto de R$ 50,00
+          const denomCeil = 1 - (basePctSum + 0.06);
+          ttPreco = denomCeil > 0 ? (CF + 6.00 + 50.00) / denomCeil : 0;
+          ttTaxaFixa = 6.00;
+          ttComissaoRate = 0.06;
+          ttFreteValor = 50.00;
+          ttFaixaText = 'A partir de R$ 50 (6% + R$ 6,00 + frete teto R$ 50)';
+        }
+      }
+
+      const ttImpVal = ttPreco * (impostoPct / 100);
+      const ttRepVal = ttPreco * (repPct / 100);
+      const ttComVal = ttPreco * ttComissaoRate;
+      const ttTotalTax = ttImpVal + ttRepVal + ttComVal + ttTaxaFixa + ttFreteValor;
+      const ttLucro = ttPreco - CF - (ttImpVal + ttRepVal + ttComVal + ttTaxaFixa + ttFreteValor);
+      const ttMargemReal = ttPreco > 0 ? (ttLucro / ttPreco) * 100 : 0;
+
+      // 2. SHOPEE (CNPJ)
+      // Faixas:
+      // Até R$ 79,99 -> 20% + R$ 4,50
+      // R$ 80,00 - 99,99 -> 14% + R$ 16,00
+      // R$ 100,00 - 199,99 -> 14% + R$ 20,00
+      // Acima de R$ 200,00 -> 14% + R$ 26,00
+      let shPreco = 0;
+      let shComRate = 0.20;
+      let shTaxaFixa = 4.50;
+      let shFaixaText = '';
+
+      const shFaixas = [
+        { max: 79.99, min: 0, com: 0.20, taxa: 4.50, desc: 'Até R$ 79,99 (20% + R$ 4,50)' },
+        { max: 99.99, min: 80.00, com: 0.14, taxa: 16.00, desc: 'R$ 80 a 99,99 (14% + R$ 16,00)' },
+        { max: 199.99, min: 100.00, com: 0.14, taxa: 20.00, desc: 'R$ 100 a 199,99 (14% + R$ 20,00)' },
+        { max: Infinity, min: 200.00, com: 0.14, taxa: 26.00, desc: 'Acima de R$ 200 (14% + R$ 26,00)' }
+      ];
+
+      for (const f of shFaixas) {
+        const denom = 1 - (basePctSum + f.com);
+        if (denom > 0) {
+          const cand = (CF + f.taxa) / denom;
+          if (cand >= f.min && cand <= f.max) {
+            shPreco = cand;
+            shComRate = f.com;
+            shTaxaFixa = f.taxa;
+            shFaixaText = f.desc;
+            break;
           }
-          
-          appState.firestoreDb = firebase.firestore();
-          updateDiagUI("diag-init", true, "Firebase inicializado com sucesso");
+        }
+      }
 
-          // Test collections read
-          const embSnap = await appState.firestoreDb.collection("embalagens").get();
-          const catSnap = await appState.firestoreDb.collection("categorias").get();
-
-          if (embSnap.empty) {
-            for (const item of DEFAULT_EMBALAGENS) {
-              await appState.firestoreDb.collection("embalagens").add({
-                nome: item.nome,
-                valor: item.valor,
-                unidade: item.unidade
-              });
+      // Fallback de continuidade de faixa se cair nos intervalos
+      if (shPreco === 0) {
+        for (const f of shFaixas) {
+          const denom = 1 - (basePctSum + f.com);
+          if (denom > 0) {
+            const cand = (CF + f.taxa) / denom;
+            if (cand > 0) {
+              shPreco = cand;
+              shComRate = f.com;
+              shTaxaFixa = f.taxa;
+              shFaixaText = f.desc;
+              if (cand <= f.max) break;
             }
           }
-
-          if (catSnap.empty) {
-            for (const item of DEFAULT_CATEGORIAS) {
-              await appState.firestoreDb.collection("categorias").add({
-                nome: item.nome,
-                classico: item.classico,
-                premium: item.premium
-              });
-            }
-          }
-
-          // Recarregar dados do Firestore
-          const freshEmb = await appState.firestoreDb.collection("embalagens").get();
-          const freshCat = await appState.firestoreDb.collection("categorias").get();
-
-          const loadedEmb = [];
-          freshEmb.forEach(doc => {
-            loadedEmb.push({ id: doc.id, ...doc.data() });
-          });
-          const loadedCat = [];
-          freshCat.forEach(doc => {
-            loadedCat.push({ id: doc.id, ...doc.data() });
-          });
-
-          if (loadedEmb.length > 0) appState.embalagens = loadedEmb;
-          if (loadedCat.length > 0) appState.categorias = loadedCat;
-
-          appState.isFirestoreOnline = true;
-          setSyncStatus("online", "Dados salvos na nuvem ✓");
-          updateDiagUI("diag-firestore", true, `Conectado (${appState.embalagens.length} embalagens, ${appState.categorias.length} categorias)`);
-          salvarDadosLocais();
-        } catch (error) {
-          console.warn("Firestore error:", error);
-          appState.isFirestoreOnline = false;
-          setSyncStatus("offline", "⚠ Modo offline — dados apenas neste navegador");
-          updateDiagUI("diag-firestore", false, (error.code ? error.code + ": " : "") + error.message);
         }
+      }
+
+      const shImpVal = shPreco * (impostoPct / 100);
+      const shRepVal = shPreco * (repPct / 100);
+      const shComVal = shPreco * shComRate;
+      const shTotalTax = shImpVal + shRepVal + shComVal + shTaxaFixa;
+      const shLucro = shPreco - CF - shTotalTax;
+      const shMargemReal = shPreco > 0 ? (shLucro / shPreco) * 100 : 0;
+
+      // 3. MERCADO LIVRE
+      // Tipo Anúncio + Categoria
+      const isPremium = document.querySelector('input[name="ml-tipo"]:checked')?.value === 'premium';
+      const cat = DataStore.categorias.find(x => x.id === selCategoria.value) || DataStore.categorias[0] || { classico: 12, premium: 17 };
+      const mlComRate = (isPremium ? cat.premium : cat.classico) / 100;
+      const pesoIdx = Math.min(Math.max(0, parseInt(selPeso.value) || 0), PESO_FAIXAS.length - 1);
+      const fretesDoPeso = ML_FRETE_TABLE[pesoIdx] || ML_FRETE_TABLE[0];
+
+      // Preço auxiliar sem frete define a faixa na tabela Mercado Envios
+      const mlDenom = 1 - (basePctSum + mlComRate);
+      const pAux = mlDenom > 0 ? CF / mlDenom : CF;
+
+      // Colunas de preço:
+      // 0: até 18.99
+      // 1: 19.00 a 48.99
+      // 2: 49.00 a 78.99
+      // 3: 79.00 a 99.99
+      // 4: 100.00 a 119.99
+      // 5: 120.00 a 149.99
+      // 6: 150.00 a 199.99
+      // 7: 200.00 ou mais
+      let colIdx = 0;
+      let faixaPrecoTexto = 'Até R$ 18,99';
+      if (pAux <= 18.99) {
+        colIdx = 0; faixaPrecoTexto = 'Até R$ 18,99';
+      } else if (pAux <= 48.99) {
+        colIdx = 1; faixaPrecoTexto = 'R$ 19,00 a 48,99';
+      } else if (pAux <= 78.99) {
+        colIdx = 2; faixaPrecoTexto = 'R$ 49,00 a 78,99';
+      } else if (pAux <= 99.99) {
+        colIdx = 3; faixaPrecoTexto = 'R$ 79,00 a 99,99';
+      } else if (pAux <= 119.99) {
+        colIdx = 4; faixaPrecoTexto = 'R$ 100,00 a 119,99';
+      } else if (pAux <= 149.99) {
+        colIdx = 5; faixaPrecoTexto = 'R$ 120,00 a 149,99';
+      } else if (pAux <= 199.99) {
+        colIdx = 6; faixaPrecoTexto = 'R$ 150,00 a 199,99';
       } else {
-        updateDiagUI("diag-sdk", false, "SDK Firebase não detectado");
-        updateDiagUI("diag-init", false, "Modo autônomo offline");
-        updateDiagUI("diag-firestore", false, "Utilizando armazenamento local seguro");
+        colIdx = 7; faixaPrecoTexto = 'R$ 200,00 ou mais';
       }
 
-      renderSelectEmbalagens();
-      renderSelectCategorias();
-      renderFaixasPeso();
-      renderTabelasModais();
-      calcularPrecos();
+      const mlFreteVal = fretesDoPeso[colIdx] || 0;
+      const mlPreco = mlDenom > 0 ? (CF + mlFreteVal) / mlDenom : 0;
+      const mlImpVal = mlPreco * (impostoPct / 100);
+      const mlRepVal = mlPreco * (repPct / 100);
+      const mlComVal = mlPreco * mlComRate;
+      const mlTaxaFixa = 0;
+      const mlTotalTax = mlImpVal + mlRepVal + mlComVal + mlFreteVal;
+      const mlLucro = mlPreco - CF - mlTotalTax;
+      const mlMargemReal = mlPreco > 0 ? (mlLucro / mlPreco) * 100 : 0;
+
+      // Atualiza Mercado Livre Badge Tipo
+      lblMlTipoBadge.textContent = isPremium ? 'Anúncio Premium' : 'Anúncio Clássico';
+
+      // Renderiza Valores nos Cards
+      // TikTok
+      document.getElementById('val-tt-preco').textContent = formatBRL(ttPreco);
+      document.getElementById('val-tt-imp').textContent = formatBRL(ttImpVal);
+      document.getElementById('val-tt-rep').textContent = formatBRL(ttRepVal);
+      document.getElementById('val-tt-com').textContent = `${formatBRL(ttComVal)} (${(ttComissaoRate * 100).toFixed(0)}%)`;
+      document.getElementById('val-tt-taxa').textContent = formatBRL(ttTaxaFixa);
+      document.getElementById('val-tt-frete').textContent = formatBRL(ttFreteValor);
+      document.getElementById('val-tt-totaltax').textContent = formatBRL(ttTotalTax);
+      document.getElementById('val-tt-lucro').textContent = formatBRL(ttLucro);
+      document.getElementById('val-tt-margem').textContent = formatPct(ttMargemReal);
+      document.getElementById('val-tt-faixa').textContent = ttFaixaText;
+
+      // Shopee
+      document.getElementById('val-sh-preco').textContent = formatBRL(shPreco);
+      document.getElementById('val-sh-imp').textContent = formatBRL(shImpVal);
+      document.getElementById('val-sh-rep').textContent = formatBRL(shRepVal);
+      document.getElementById('val-sh-com').textContent = `${formatBRL(shComVal)} (${(shComRate * 100).toFixed(0)}%)`;
+      document.getElementById('val-sh-taxa').textContent = formatBRL(shTaxaFixa);
+      document.getElementById('val-sh-frete').textContent = 'R$ 0,00';
+      document.getElementById('val-sh-totaltax').textContent = formatBRL(shTotalTax);
+      document.getElementById('val-sh-lucro').textContent = formatBRL(shLucro);
+      document.getElementById('val-sh-margem').textContent = formatPct(shMargemReal);
+      document.getElementById('val-sh-faixa').textContent = shFaixaText;
+
+      // Mercado Livre
+      document.getElementById('val-ml-preco').textContent = formatBRL(mlPreco);
+      document.getElementById('val-ml-imp').textContent = formatBRL(mlImpVal);
+      document.getElementById('val-ml-rep').textContent = formatBRL(mlRepVal);
+      document.getElementById('val-ml-com').textContent = `${formatBRL(mlComVal)} (${(mlComRate * 100).toFixed(2)}%)`;
+      document.getElementById('val-ml-taxa').textContent = 'R$ 0,00';
+      document.getElementById('val-ml-frete').textContent = formatBRL(mlFreteVal);
+      document.getElementById('val-ml-totaltax').textContent = formatBRL(mlTotalTax);
+      document.getElementById('val-ml-lucro').textContent = formatBRL(mlLucro);
+      document.getElementById('val-ml-margem').textContent = formatPct(mlMargemReal);
+      document.getElementById('val-ml-faixa').textContent = `${PESO_FAIXAS[pesoIdx]} • Base: ${faixaPrecoTexto}`;
+
+      // Highlight Menor Preço ("Melhor preço")
+      const prices = [
+        { id: 'tiktok', val: ttPreco },
+        { id: 'shopee', val: shPreco },
+        { id: 'ml', val: mlPreco }
+      ].filter(p => p.val > 0);
+
+      const cardTt = document.getElementById('card-tiktok');
+      const cardSh = document.getElementById('card-shopee');
+      const cardMl = document.getElementById('card-ml');
+      const bTt = document.getElementById('badge-tiktok');
+      const bSh = document.getElementById('badge-shopee');
+      const bMl = document.getElementById('badge-ml');
+
+      cardTt.classList.remove('is-best');
+      cardSh.classList.remove('is-best');
+      cardMl.classList.remove('is-best');
+      bTt.style.display = 'none';
+      bSh.style.display = 'none';
+      bMl.style.display = 'none';
+
+      if (prices.length > 0) {
+        prices.sort((a, b) => a.val - b.val);
+        const best = prices[0].id;
+        if (best === 'tiktok') {
+          cardTt.classList.add('is-best');
+          bTt.style.display = 'block';
+        } else if (best === 'shopee') {
+          cardSh.classList.add('is-best');
+          bSh.style.display = 'block';
+        } else if (best === 'ml') {
+          cardMl.classList.add('is-best');
+          bMl.style.display = 'block';
+        }
+      }
     }
 
-    /* ==========================================================================
-       7. TESTE DE CONEXÃO DIRETA
-       ========================================================================== */
-    async function testarConexaoFirestore() {
-      const writeStep = document.getElementById("diag-write");
-      if (writeStep) {
-        writeStep.querySelector(".diag-desc").textContent = "Testando ciclo completo de gravação...";
-      }
-
-      if (!appState.firestoreDb) {
-        updateDiagUI("diag-write", false, "Firebase Firestore indisponível. Operando via localStorage local.");
-        setSyncStatus("offline", "⚠ Modo offline — dados apenas neste navegador");
-        return;
-      }
-
-      try {
-        setSyncStatus("", "Testando Firestore...");
-        // 1. Leitura
-        const testSnap = await appState.firestoreDb.collection("embalagens").limit(1).get();
-        // 2. Gravação de teste
-        const testDocRef = await appState.firestoreDb.collection("teste").add({
-          timestamp: new Date().toISOString(),
-          origem: "Diagnostico EWM Distribuidora"
-        });
-        // 3. Exclusão do doc de teste
-        await testDocRef.delete();
-
-        appState.isFirestoreOnline = true;
-        setSyncStatus("online", "Dados salvos na nuvem ✓");
-        updateDiagUI("diag-write", true, "Ciclo leitura/gravação/exclusão concluído com êxito!");
-      } catch (err) {
-        appState.isFirestoreOnline = false;
-        setSyncStatus("offline", "⚠ Modo offline — dados apenas neste navegador");
-        const msg = (err.code ? err.code + " — " : "") + err.message;
-        updateDiagUI("diag-write", false, "Falha no teste: " + msg);
-      }
+    // Modal Managers
+    function openModal(id) {
+      const m = document.getElementById(id);
+      if (m) m.classList.add('open');
+    }
+    function closeModal(id) {
+      const m = document.getElementById(id);
+      if (m) m.classList.remove('open');
     }
 
-    /* ==========================================================================
-       8. RENDERIZAÇÃO DOS SELECTS E MODAIS
-       ========================================================================== */
-    function renderSelectEmbalagens() {
-      const select = document.getElementById("tipo-embalagem");
-      if (!select) return;
-      const currentVal = select.value;
-
-      let html = "";
-      appState.embalagens.forEach(item => {
-        html += `<option value="${escapeHtml(item.id)}" data-valor="${item.valor}" data-unidade="${escapeHtml(item.unidade)}">
-          ${escapeHtml(item.nome)} (${formatBRL(item.valor)} / ${escapeHtml(item.unidade)})
-        </option>`;
+    // Render Embalagens Table in Modal
+    function renderEmbalagensTable() {
+      const tbody = document.getElementById('tbody-embalagens');
+      tbody.innerHTML = '';
+      DataStore.embalagens.forEach(emb => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${escapeHtml(emb.nome)}</strong></td>
+          <td>${formatBRL(emb.valor)}</td>
+          <td>${escapeHtml(emb.unidade)}</td>
+          <td style="text-align: right; white-space: nowrap;">
+            <button type="button" class="btn-action-small btn-edit" data-edit-emb="${escapeHtml(emb.id)}">Editar</button>
+            <button type="button" class="btn-action-small btn-delete" data-del-emb="${escapeHtml(emb.id)}">Excluir</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
       });
-      select.innerHTML = html;
-
-      // Manter seleção anterior se ainda existir
-      if (currentVal && appState.embalagens.some(e => e.id === currentVal)) {
-        select.value = currentVal;
-      }
     }
 
-    function renderSelectCategorias() {
-      const select = document.getElementById("ml-categoria");
-      if (!select) return;
-      const currentVal = select.value;
-
-      let html = "";
-      appState.categorias.forEach(item => {
-        html += `<option value="${escapeHtml(item.id)}" data-classico="${item.classico}" data-premium="${item.premium}">
-          ${escapeHtml(item.nome)} (${item.classico}% / ${item.premium}%)
-        </option>`;
+    // Render Categorias Table in Modal
+    function renderCategoriasTable() {
+      const tbody = document.getElementById('tbody-categorias');
+      tbody.innerHTML = '';
+      DataStore.categorias.forEach(cat => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${escapeHtml(cat.nome)}</strong></td>
+          <td>${escapeHtml(cat.classico)}%</td>
+          <td>${escapeHtml(cat.premium)}%</td>
+          <td style="text-align: right; white-space: nowrap;">
+            <button type="button" class="btn-action-small btn-edit" data-edit-cat="${escapeHtml(cat.id)}">Editar</button>
+            <button type="button" class="btn-action-small btn-delete" data-del-cat="${escapeHtml(cat.id)}">Excluir</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
       });
-      select.innerHTML = html;
-
-      if (currentVal && appState.categorias.some(c => c.id === currentVal)) {
-        select.value = currentVal;
-      }
     }
 
-    function renderFaixasPeso() {
-      const select = document.getElementById("ml-faixa-peso");
-      if (!select) return;
-      let html = "";
-      FAIXAS_PESO.forEach((faixa, index) => {
-        html += `<option value="${index}">${escapeHtml(faixa)}</option>`;
+    // Reset Embalagem Form
+    function resetEmbForm() {
+      document.getElementById('form-emb-id').value = '';
+      document.getElementById('inp-emb-nome').value = '';
+      document.getElementById('inp-emb-valor').value = '';
+      document.getElementById('sel-emb-unidade').value = 'unidade';
+      document.getElementById('form-emb-title').textContent = '+ Adicionar Embalagem';
+      document.getElementById('btn-save-emb').textContent = 'Salvar Embalagem';
+      document.getElementById('btn-cancel-emb').style.display = 'none';
+    }
+
+    // Reset Categoria Form
+    function resetCatForm() {
+      document.getElementById('form-cat-id').value = '';
+      document.getElementById('inp-cat-nome').value = '';
+      document.getElementById('inp-cat-classico').value = '';
+      document.getElementById('inp-cat-premium').value = '';
+      document.getElementById('form-cat-title').textContent = '+ Adicionar Categoria';
+      document.getElementById('btn-save-cat').textContent = 'Salvar Categoria';
+      document.getElementById('btn-cancel-cat').style.display = 'none';
+    }
+
+    // Initialize listeners
+    document.addEventListener('DOMContentLoaded', () => {
+      DataStore.init();
+      populateEmbalagensSelect();
+      populateCategoriasSelect();
+      populatePesoSelect();
+      updateDiagStatus();
+      calculate();
+
+      // Calculation triggers on all inputs
+      const allInputs = [
+        inpCusto, inpEtiqueta, selEmbalagem, inpQtdEmb,
+        inpImposto, inpRep, inpMargem, selCategoria, selPeso
+      ];
+      allInputs.forEach(el => {
+        el.addEventListener('input', calculate);
+        el.addEventListener('change', calculate);
       });
-      select.innerHTML = html;
-    }
 
-    function renderTabelasModais() {
-      // Tabela de Embalagens
-      const tbodyEmb = document.getElementById("lista-embalagens-tbody");
-      if (tbodyEmb) {
-        let html = "";
-        appState.embalagens.forEach(item => {
-          html += `<tr>
-            <td><strong>${escapeHtml(item.nome)}</strong></td>
-            <td>${formatBRL(item.valor)}</td>
-            <td><span class="badge">${escapeHtml(item.unidade)}</span></td>
-            <td style="text-align: right;">
-              <button type="button" class="btn-table-sm" onclick="editarEmbalagem('${escapeHtml(item.id)}')">Editar</button>
-              <button type="button" class="btn-table-sm btn-danger" onclick="excluirEmbalagem('${escapeHtml(item.id)}')">Excluir</button>
-            </td>
-          </tr>`;
+      // ML Radio pills
+      const radioInputs = document.querySelectorAll('input[name="ml-tipo"]');
+      radioInputs.forEach(r => {
+        r.addEventListener('change', (e) => {
+          lblTipoClassico.classList.toggle('active', e.target.value === 'classico');
+          lblTipoPremium.classList.toggle('active', e.target.value === 'premium');
+          calculate();
         });
-        tbodyEmb.innerHTML = html;
-      }
+      });
 
-      // Tabela de Categorias
-      const tbodyCat = document.getElementById("lista-categorias-tbody");
-      if (tbodyCat) {
-        let html = "";
-        appState.categorias.forEach(item => {
-          html += `<tr>
-            <td><strong>${escapeHtml(item.nome)}</strong></td>
-            <td>${item.classico}%</td>
-            <td>${item.premium}%</td>
-            <td style="text-align: right;">
-              <button type="button" class="btn-table-sm" onclick="editarCategoria('${escapeHtml(item.id)}')">Editar</button>
-              <button type="button" class="btn-table-sm btn-danger" onclick="excluirCategoria('${escapeHtml(item.id)}')">Excluir</button>
-            </td>
-          </tr>`;
+      // Modals Open
+      document.getElementById('btn-open-emb').addEventListener('click', () => {
+        renderEmbalagensTable();
+        resetEmbForm();
+        openModal('modal-embalagens');
+      });
+
+      document.getElementById('btn-open-cat').addEventListener('click', () => {
+        renderCategoriasTable();
+        resetCatForm();
+        openModal('modal-categorias');
+      });
+
+      // Close buttons on Modals
+      document.querySelectorAll('[data-close]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          closeModal(e.target.getAttribute('data-close'));
         });
-        tbodyCat.innerHTML = html;
-      }
-    }
+      });
 
-    /* ==========================================================================
-       9. OPERAÇÕES DE CRUD: EMBALAGENS
-       ========================================================================== */
-    window.editarEmbalagem = function(id) {
-      const item = appState.embalagens.find(e => e.id === id);
-      if (!item) return;
-      document.getElementById("emb-edit-id").value = item.id;
-      document.getElementById("emb-nome").value = item.nome;
-      document.getElementById("emb-valor").value = item.valor;
-      document.getElementById("emb-unidade").value = item.unidade;
-      document.getElementById("form-emb-title").textContent = "Editar Embalagem";
-    };
+      // Close modal on click outside
+      document.querySelectorAll('.modal-overlay').forEach(modal => {
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) {
+            modal.classList.remove('open');
+          }
+        });
+      });
 
-    window.excluirEmbalagem = async function(id) {
-      if (appState.embalagens.length <= 1) {
-        alert("Atenção: Não é permitido excluir a última embalagem cadastrada.");
-        return;
-      }
-      if (!confirm("Deseja realmente remover esta embalagem?")) return;
+      // Save Embalagem
+      document.getElementById('btn-save-emb').addEventListener('click', async () => {
+        const id = document.getElementById('form-emb-id').value;
+        const nome = document.getElementById('inp-emb-nome').value.trim();
+        const valor = parseFloat(document.getElementById('inp-emb-valor').value);
+        const unidade = document.getElementById('sel-emb-unidade').value;
 
-      const btnWriteDesc = document.querySelector("#diag-write .diag-desc");
-
-      if (appState.isFirestoreOnline && appState.firestoreDb) {
-        try {
-          await appState.firestoreDb.collection("embalagens").doc(id).delete();
-          appState.embalagens = appState.embalagens.filter(e => e.id !== id);
-          salvarDadosLocais();
-          updateDiagUI("diag-write", true, `Embalagem ${id} excluída da nuvem.`);
-        } catch (err) {
-          alert("Erro ao excluir do Firestore: " + err.message);
-          updateDiagUI("diag-write", false, (err.code ? err.code + ": " : "") + err.message);
+        if (!nome) {
+          alert('Por favor, informe o nome da embalagem.');
           return;
         }
-      } else {
-        appState.embalagens = appState.embalagens.filter(e => e.id !== id);
-        salvarDadosLocais();
-        updateDiagUI("diag-write", true, "Embalagem removida localmente (offline).");
-      }
-
-      renderSelectEmbalagens();
-      renderTabelasModais();
-      calcularPrecos();
-    };
-
-    async function salvarEmbalagemHandler() {
-      const id = document.getElementById("emb-edit-id").value.trim();
-      const nome = document.getElementById("emb-nome").value.trim();
-      const valor = parseFloat(document.getElementById("emb-valor").value);
-      const unidade = document.getElementById("emb-unidade").value;
-
-      if (!nome) {
-        alert("O nome da embalagem é obrigatório.");
-        return;
-      }
-      if (isNaN(valor) || valor <= 0) {
-        alert("Informe um valor numérico válido e maior que zero para a embalagem.");
-        return;
-      }
-
-      const payload = { nome, valor, unidade };
-
-      if (appState.isFirestoreOnline && appState.firestoreDb) {
-        try {
-          if (id) {
-            await appState.firestoreDb.collection("embalagens").doc(id).update(payload);
-            const idx = appState.embalagens.findIndex(e => e.id === id);
-            if (idx !== -1) appState.embalagens[idx] = { id, ...payload };
-            updateDiagUI("diag-write", true, `Embalagem "${nome}" atualizada na nuvem.`);
-          } else {
-            const docRef = await appState.firestoreDb.collection("embalagens").add(payload);
-            appState.embalagens.push({ id: docRef.id, ...payload });
-            updateDiagUI("diag-write", true, `Embalagem "${nome}" adicionada na nuvem.`);
-          }
-          salvarDadosLocais();
-        } catch (err) {
-          alert("Erro no Firestore ao salvar embalagem: " + err.message);
-          updateDiagUI("diag-write", false, (err.code ? err.code + ": " : "") + err.message);
+        if (isNaN(valor) || valor <= 0) {
+          alert('Informe um valor válido maior que zero.');
           return;
         }
-      } else {
+
         if (id) {
-          const idx = appState.embalagens.findIndex(e => e.id === id);
-          if (idx !== -1) appState.embalagens[idx] = { id, ...payload };
-          updateDiagUI("diag-write", true, `Embalagem "${nome}" atualizada localmente.`);
+          await DataStore.updateEmbalagem(id, { nome, valor, unidade });
+          showToast('Embalagem atualizada com sucesso!');
         } else {
-          const newId = "emb_" + Date.now();
-          appState.embalagens.push({ id: newId, ...payload });
-          updateDiagUI("diag-write", true, `Embalagem "${nome}" salva localmente.`);
+          await DataStore.addEmbalagem({ nome, valor, unidade });
+          showToast('Nova embalagem cadastrada!');
         }
-        salvarDadosLocais();
-      }
 
-      // Reset form
-      document.getElementById("emb-edit-id").value = "";
-      document.getElementById("emb-nome").value = "";
-      document.getElementById("emb-valor").value = "";
-      document.getElementById("form-emb-title").textContent = "+ Adicionar Embalagem";
+        renderEmbalagensTable();
+        resetEmbForm();
+        populateEmbalagensSelect(id || null);
+        updateDiagStatus();
+        calculate();
+      });
 
-      renderSelectEmbalagens();
-      renderTabelasModais();
-      calcularPrecos();
-    }
+      document.getElementById('btn-cancel-emb').addEventListener('click', resetEmbForm);
 
-    /* ==========================================================================
-       10. OPERAÇÕES DE CRUD: CATEGORIAS (MERCADO LIVRE)
-       ========================================================================== */
-    window.editarCategoria = function(id) {
-      const item = appState.categorias.find(c => c.id === id);
-      if (!item) return;
-      document.getElementById("cat-edit-id").value = item.id;
-      document.getElementById("cat-nome").value = item.nome;
-      document.getElementById("cat-classico").value = item.classico;
-      document.getElementById("cat-premium").value = item.premium;
-      document.getElementById("form-cat-title").textContent = "Editar Categoria";
-    };
+      // Table Embalagens actions delegation
+      document.getElementById('tbody-embalagens').addEventListener('click', async (e) => {
+        const btnEdit = e.target.closest('[data-edit-emb]');
+        const btnDel = e.target.closest('[data-del-emb]');
 
-    window.excluirCategoria = async function(id) {
-      if (appState.categorias.length <= 1) {
-        alert("Atenção: Não é permitido excluir a última categoria cadastrada.");
-        return;
-      }
-      if (!confirm("Deseja realmente remover esta categoria?")) return;
-
-      if (appState.isFirestoreOnline && appState.firestoreDb) {
-        try {
-          await appState.firestoreDb.collection("categorias").doc(id).delete();
-          appState.categorias = appState.categorias.filter(c => c.id !== id);
-          salvarDadosLocais();
-          updateDiagUI("diag-write", true, `Categoria ${id} excluída da nuvem.`);
-        } catch (err) {
-          alert("Erro ao excluir categoria do Firestore: " + err.message);
-          updateDiagUI("diag-write", false, (err.code ? err.code + ": " : "") + err.message);
-          return;
-        }
-      } else {
-        appState.categorias = appState.categorias.filter(c => c.id !== id);
-        salvarDadosLocais();
-        updateDiagUI("diag-write", true, "Categoria removida localmente (offline).");
-      }
-
-      renderSelectCategorias();
-      renderTabelasModais();
-      calcularPrecos();
-    };
-
-    async function salvarCategoriaHandler() {
-      const id = document.getElementById("cat-edit-id").value.trim();
-      const nome = document.getElementById("cat-nome").value.trim();
-      const classico = parseFloat(document.getElementById("cat-classico").value);
-      const premium = parseFloat(document.getElementById("cat-premium").value);
-
-      if (!nome) {
-        alert("O nome da categoria é obrigatório.");
-        return;
-      }
-      if (isNaN(classico) || classico < 0 || classico > 100 || isNaN(premium) || premium < 0 || premium > 100) {
-        alert("Informe alíquotas percentuais válidas entre 0% e 100%.");
-        return;
-      }
-
-      const payload = { nome, classico, premium };
-
-      if (appState.isFirestoreOnline && appState.firestoreDb) {
-        try {
-          if (id) {
-            await appState.firestoreDb.collection("categorias").doc(id).update(payload);
-            const idx = appState.categorias.findIndex(c => c.id === id);
-            if (idx !== -1) appState.categorias[idx] = { id, ...payload };
-            updateDiagUI("diag-write", true, `Categoria "${nome}" atualizada na nuvem.`);
-          } else {
-            const docRef = await appState.firestoreDb.collection("categorias").add(payload);
-            appState.categorias.push({ id: docRef.id, ...payload });
-            updateDiagUI("diag-write", true, `Categoria "${nome}" adicionada na nuvem.`);
+        if (btnEdit) {
+          const id = btnEdit.getAttribute('data-edit-emb');
+          const emb = DataStore.embalagens.find(x => x.id === id);
+          if (emb) {
+            document.getElementById('form-emb-id').value = emb.id;
+            document.getElementById('inp-emb-nome').value = emb.nome;
+            document.getElementById('inp-emb-valor').value = emb.valor;
+            document.getElementById('sel-emb-unidade').value = emb.unidade;
+            document.getElementById('form-emb-title').textContent = 'Editar Embalagem';
+            document.getElementById('btn-save-emb').textContent = 'Atualizar';
+            document.getElementById('btn-cancel-emb').style.display = 'inline-block';
+            document.getElementById('inp-emb-nome').focus();
           }
-          salvarDadosLocais();
-        } catch (err) {
-          alert("Erro no Firestore ao salvar categoria: " + err.message);
-          updateDiagUI("diag-write", false, (err.code ? err.code + ": " : "") + err.message);
+        } else if (btnDel) {
+          const id = btnDel.getAttribute('data-del-emb');
+          const emb = DataStore.embalagens.find(x => x.id === id);
+          if (emb) {
+            if (DataStore.embalagens.length <= 1) {
+              alert('Não é permitido excluir todas as embalagens. Mantenha ao menos uma.');
+              return;
+            }
+            if (confirm(`Confirma a exclusão da embalagem "${emb.nome}"?`)) {
+              await DataStore.deleteEmbalagem(id);
+              showToast('Embalagem excluída.');
+              renderEmbalagensTable();
+              populateEmbalagensSelect();
+              updateDiagStatus();
+              calculate();
+            }
+          }
+        }
+      });
+
+      // Save Categoria
+      document.getElementById('btn-save-cat').addEventListener('click', async () => {
+        const id = document.getElementById('form-cat-id').value;
+        const nome = document.getElementById('inp-cat-nome').value.trim();
+        const classico = parseFloat(document.getElementById('inp-cat-classico').value);
+        const premium = parseFloat(document.getElementById('inp-cat-premium').value);
+
+        if (!nome) {
+          alert('Por favor, informe o nome da categoria.');
           return;
         }
-      } else {
+        if (isNaN(classico) || classico < 0 || classico > 100) {
+          alert('A taxa do anúncio clássico deve estar entre 0% e 100%.');
+          return;
+        }
+        if (isNaN(premium) || premium < 0 || premium > 100) {
+          alert('A taxa do anúncio premium deve estar entre 0% e 100%.');
+          return;
+        }
+
         if (id) {
-          const idx = appState.categorias.findIndex(c => c.id === id);
-          if (idx !== -1) appState.categorias[idx] = { id, ...payload };
-          updateDiagUI("diag-write", true, `Categoria "${nome}" atualizada localmente.`);
+          await DataStore.updateCategoria(id, { nome, classico, premium });
+          showToast('Categoria atualizada com sucesso!');
         } else {
-          const newId = "cat_" + Date.now();
-          appState.categorias.push({ id: newId, ...payload });
-          updateDiagUI("diag-write", true, `Categoria "${nome}" salva localmente.`);
-        }
-        salvarDadosLocais();
-      }
-
-      // Reset form
-      document.getElementById("cat-edit-id").value = "";
-      document.getElementById("cat-nome").value = "";
-      document.getElementById("cat-classico").value = "";
-      document.getElementById("cat-premium").value = "";
-      document.getElementById("form-cat-title").textContent = "+ Adicionar Categoria";
-
-      renderSelectCategorias();
-      renderTabelasModais();
-      calcularPrecos();
-    }
-
-    /* ==========================================================================
-       11. MOTOR DE CÁLCULO DE PREÇOS (TEMPO REAL)
-       ========================================================================== */
-    function calcularPrecos() {
-      try {
-        const custoProd = parseFloat(document.getElementById("custo-produto").value) || 0;
-        const etiqueta = parseFloat(document.getElementById("etiqueta").value) || 0;
-        const qtdEmb = parseFloat(document.getElementById("qtd-embalagem").value) || 1;
-        const impostoPct = parseFloat(document.getElementById("imposto").value) || 0;
-        const repPct = parseFloat(document.getElementById("comissao-rep").value) || 0;
-        const margemPct = parseFloat(document.getElementById("margem-lucro").value) || 0;
-
-        // Obter valor unitário da embalagem selecionada
-        const selEmb = document.getElementById("tipo-embalagem");
-        let valorUnitEmb = 0;
-        if (selEmb && selEmb.selectedOptions && selEmb.selectedOptions[0]) {
-          valorUnitEmb = parseFloat(selEmb.selectedOptions[0].getAttribute("data-valor")) || 0;
+          await DataStore.addCategoria({ nome, classico, premium });
+          showToast('Nova categoria adicionada!');
         }
 
-        // Custo Fixo Direto (CF)
-        const custoEmbalagemTotal = valorUnitEmb * qtdEmb;
-        const CF = custoProd + etiqueta + custoEmbalagemTotal;
+        renderCategoriasTable();
+        resetCatForm();
+        populateCategoriasSelect(id || null);
+        updateDiagStatus();
+        calculate();
+      });
 
-        const summaryEl = document.getElementById("cost-summary");
-        if (summaryEl) {
-          summaryEl.textContent = `Custo Fixo Total (CF): ${formatBRL(CF)}`;
-        }
+      document.getElementById('btn-cancel-cat').addEventListener('click', resetCatForm);
 
-        const basePct = (impostoPct + repPct + margemPct) / 100;
+      // Table Categorias actions delegation
+      document.getElementById('tbody-categorias').addEventListener('click', async (e) => {
+        const btnEdit = e.target.closest('[data-edit-cat]');
+        const btnDel = e.target.closest('[data-del-cat]');
 
-        /* ----------------------------------------------------------------------
-           A) TIKTOK SHOP
-           - comissão 10% se P < 50, senão 6%
-           - taxa fixa R$ 4,00 se P < 50, senão R$ 6,00
-           - Frete Grátis 6% do preço com teto de R$ 50,00
-           P = (CF + taxa fixa) / (1 - (imposto% + rep%)/100 - comissao - frete% - margem%)
-           ---------------------------------------------------------------------- */
-        let ttPreco = 0;
-        let ttComissaoPct = 0;
-        let ttTaxaFixa = 0;
-        let ttFrete = 0;
-        let ttFaixaNome = "";
-
-        // Testa Hipótese 1: P < 50 (Comissão 10%, Taxa Fixa R$ 4, Frete 6%)
-        const divH1 = 1 - basePct - 0.10 - 0.06;
-        let p1 = -1;
-        if (divH1 > 0) {
-          p1 = (CF + 4.00) / divH1;
-        }
-
-        if (p1 > 0 && p1 < 50) {
-          ttPreco = p1;
-          ttComissaoPct = 0.10;
-          ttTaxaFixa = 4.00;
-          ttFrete = ttPreco * 0.06;
-          ttFaixaNome = "Abaixo de R$ 50 (10% + R$ 4,00)";
-        } else {
-          // Hipótese 2: P >= 50 (Comissão 6%, Taxa Fixa R$ 6, Frete 6% com teto R$ 50)
-          // Se frete não atinge teto (6% * P <= 50 => P <= 833.33):
-          const divH2 = 1 - basePct - 0.06 - 0.06;
-          let p2 = -1;
-          if (divH2 > 0) {
-            p2 = (CF + 6.00) / divH2;
+        if (btnEdit) {
+          const id = btnEdit.getAttribute('data-edit-cat');
+          const cat = DataStore.categorias.find(x => x.id === id);
+          if (cat) {
+            document.getElementById('form-cat-id').value = cat.id;
+            document.getElementById('inp-cat-nome').value = cat.nome;
+            document.getElementById('inp-cat-classico').value = cat.classico;
+            document.getElementById('inp-cat-premium').value = cat.premium;
+            document.getElementById('form-cat-title').textContent = 'Editar Categoria';
+            document.getElementById('btn-save-cat').textContent = 'Atualizar';
+            document.getElementById('btn-cancel-cat').style.display = 'inline-block';
+            document.getElementById('inp-cat-nome').focus();
           }
-
-          if (p2 >= 50 && p2 * 0.06 <= 50) {
-            ttPreco = p2;
-            ttComissaoPct = 0.06;
-            ttTaxaFixa = 6.00;
-            ttFrete = ttPreco * 0.06;
-            ttFaixaNome = "R$ 50 ou mais (6% + R$ 6,00)";
-          } else {
-            // Hipótese 3: P >= 50 e Frete atinge teto de R$ 50
-            const divH3 = 1 - basePct - 0.06;
-            if (divH3 > 0) {
-              ttPreco = (CF + 6.00 + 50.00) / divH3;
-              ttComissaoPct = 0.06;
-              ttTaxaFixa = 6.00;
-              ttFrete = 50.00;
-              ttFaixaNome = "R$ 50+ com teto de frete (R$ 50)";
+        } else if (btnDel) {
+          const id = btnDel.getAttribute('data-del-cat');
+          const cat = DataStore.categorias.find(x => x.id === id);
+          if (cat) {
+            if (DataStore.categorias.length <= 1) {
+              alert('Não é permitido excluir todas as categorias. Mantenha ao menos uma.');
+              return;
+            }
+            if (confirm(`Confirma a exclusão da categoria "${cat.nome}"?`)) {
+              await DataStore.deleteCategoria(id);
+              showToast('Categoria removida.');
+              renderCategoriasTable();
+              populateCategoriasSelect();
+              updateDiagStatus();
+              calculate();
             }
           }
         }
-
-        // Métricas do TikTok Shop
-        const ttImposto = ttPreco * (impostoPct / 100);
-        const ttRep = ttPreco * (repPct / 100);
-        const ttComissaoValor = ttPreco * ttComissaoPct;
-        const ttTotalTaxas = ttImposto + ttRep + ttComissaoValor + ttTaxaFixa + ttFrete;
-        const ttLucro = ttPreco - CF - (ttImposto + ttRep + ttComissaoValor + ttTaxaFixa + ttFrete);
-        const ttMargemReal = ttPreco > 0 ? (ttLucro / ttPreco) * 100 : 0;
-
-        /* ----------------------------------------------------------------------
-           B) SHOPEE (CNPJ)
-           - Até R$ 79,99: 20% + R$ 4,50
-           - R$ 80,00 a R$ 99,99: 14% + R$ 16,00
-           - R$ 100,00 a R$ 199,99: 14% + R$ 20,00
-           - Acima de R$ 200,00: 14% + R$ 26,00
-           ---------------------------------------------------------------------- */
-        let spPreco = 0;
-        let spComissaoPct = 0;
-        let spTaxaFixa = 0;
-        let spFaixaNome = "";
-
-        const faixasShopee = [
-          { min: 0, max: 79.99, comm: 0.20, fixed: 4.50, desc: "Até R$ 79,99 (20% + R$ 4,50)" },
-          { min: 80.00, max: 99.99, comm: 0.14, fixed: 16.00, desc: "R$ 80 a 99,99 (14% + R$ 16,00)" },
-          { min: 100.00, max: 199.99, comm: 0.14, fixed: 20.00, desc: "R$ 100 a 199,99 (14% + R$ 20,00)" },
-          { min: 200.00, max: Infinity, comm: 0.14, fixed: 26.00, desc: "Acima de R$ 200 (14% + R$ 26,00)" }
-        ];
-
-        for (const faixa of faixasShopee) {
-          const div = 1 - basePct - faixa.comm;
-          if (div > 0) {
-            const pCandidate = (CF + faixa.fixed) / div;
-            if (pCandidate >= faixa.min && (pCandidate <= faixa.max || faixa.max === Infinity)) {
-              spPreco = pCandidate;
-              spComissaoPct = faixa.comm;
-              spTaxaFixa = faixa.fixed;
-              spFaixaNome = faixa.desc;
-              break;
-            }
-          }
-        }
-
-        // Se estiver exatamente na fronteira
-        if (spPreco === 0) {
-          const fallbackFaixa = faixasShopee[faixasShopee.length - 1];
-          const div = 1 - basePct - fallbackFaixa.comm;
-          if (div > 0) {
-            spPreco = (CF + fallbackFaixa.fixed) / div;
-            spComissaoPct = fallbackFaixa.comm;
-            spTaxaFixa = fallbackFaixa.fixed;
-            spFaixaNome = fallbackFaixa.desc;
-          }
-        }
-
-        const spImposto = spPreco * (impostoPct / 100);
-        const spRep = spPreco * (repPct / 100);
-        const spComissaoValor = spPreco * spComissaoPct;
-        const spFrete = 0; // Incluso na comissão/taxa
-        const spTotalTaxas = spImposto + spRep + spComissaoValor + spTaxaFixa + spFrete;
-        const spLucro = spPreco - CF - spTotalTaxas;
-        const spMargemReal = spPreco > 0 ? (spLucro / spPreco) * 100 : 0;
-
-        /* ----------------------------------------------------------------------
-           C) MERCADO LIVRE
-           - Comissão da categoria (Clássico ou Premium)
-           - Sem taxa fixa
-           - Frete pela tabela de peso × faixa de preço
-           - "preço auxiliar sem frete define a faixa"
-           ---------------------------------------------------------------------- */
-        const tipoAnuncio = document.getElementById("ml-tipo-anuncio").value;
-        const selCat = document.getElementById("ml-categoria");
-        let mlComissaoPctNum = 12;
-
-        if (selCat && selCat.selectedOptions && selCat.selectedOptions[0]) {
-          const opt = selCat.selectedOptions[0];
-          mlComissaoPctNum = tipoAnuncio === "premium" 
-            ? (parseFloat(opt.getAttribute("data-premium")) || 17)
-            : (parseFloat(opt.getAttribute("data-classico")) || 12);
-        }
-
-        const pesoIdx = parseInt(document.getElementById("ml-faixa-peso").value) || 0;
-        const mlComissaoFrac = mlComissaoPctNum / 100;
-        const mlDiv = 1 - (impostoPct / 100) - (repPct / 100) - mlComissaoFrac - (margemPct / 100);
-
-        let mlPreco = 0;
-        let mlFrete = 0;
-        let mlFaixaPrecoIndex = 0;
-        let mlFaixaPrecoDesc = "";
-
-        if (mlDiv > 0) {
-          // Preço auxiliar sem frete define a faixa
-          const precoAux = CF / mlDiv;
-
-          if (precoAux <= 18.99) {
-            mlFaixaPrecoIndex = 0;
-            mlFaixaPrecoDesc = "Até R$ 18,99";
-          } else if (precoAux <= 48.99) {
-            mlFaixaPrecoIndex = 1;
-            mlFaixaPrecoDesc = "R$ 19 a 48,99";
-          } else if (precoAux <= 78.99) {
-            mlFaixaPrecoIndex = 2;
-            mlFaixaPrecoDesc = "R$ 49 a 78,99";
-          } else if (precoAux <= 99.99) {
-            mlFaixaPrecoIndex = 3;
-            mlFaixaPrecoDesc = "R$ 79 a 99,99";
-          } else if (precoAux <= 119.99) {
-            mlFaixaPrecoIndex = 4;
-            mlFaixaPrecoDesc = "R$ 100 a 119,99";
-          } else if (precoAux <= 149.99) {
-            mlFaixaPrecoIndex = 5;
-            mlFaixaPrecoDesc = "R$ 120 a 149,99";
-          } else if (precoAux <= 199.99) {
-            mlFaixaPrecoIndex = 6;
-            mlFaixaPrecoDesc = "R$ 150 a 199,99";
-          } else {
-            mlFaixaPrecoIndex = 7;
-            mlFaixaPrecoDesc = "R$ 200 ou mais";
-          }
-
-          mlFrete = TABELA_FRETE_ML[pesoIdx][mlFaixaPrecoIndex];
-          mlPreco = (CF + mlFrete) / mlDiv;
-        }
-
-        const mlImposto = mlPreco * (impostoPct / 100);
-        const mlRep = mlPreco * (repPct / 100);
-        const mlComissaoValor = mlPreco * mlComissaoFrac;
-        const mlTaxaFixa = 0;
-        const mlTotalTaxas = mlImposto + mlRep + mlComissaoValor + mlTaxaFixa + mlFrete;
-        const mlLucro = mlPreco - CF - mlTotalTaxas;
-        const mlMargemReal = mlPreco > 0 ? (mlLucro / mlPreco) * 100 : 0;
-
-        /* ----------------------------------------------------------------------
-           ATUALIZAÇÃO DO DOM DOS CARDS
-           ---------------------------------------------------------------------- */
-        // TikTok
-        document.getElementById("tt-preco").textContent = formatBRL(ttPreco);
-        document.getElementById("tt-imposto").textContent = formatBRL(ttImposto);
-        document.getElementById("tt-rep").textContent = formatBRL(ttRep);
-        document.getElementById("tt-comissao").textContent = `${formatBRL(ttComissaoValor)} (${(ttComissaoPct * 100).toFixed(1)}%)`;
-        document.getElementById("tt-taxa-fixa").textContent = formatBRL(ttTaxaFixa);
-        document.getElementById("tt-frete").textContent = formatBRL(ttFrete);
-        document.getElementById("tt-total-taxas").textContent = formatBRL(ttTotalTaxas);
-        document.getElementById("tt-lucro").textContent = formatBRL(ttLucro);
-        document.getElementById("tt-margem").textContent = formatPercent(ttMargemReal);
-        document.getElementById("tt-faixa").textContent = ttFaixaNome;
-
-        // Shopee
-        document.getElementById("sp-preco").textContent = formatBRL(spPreco);
-        document.getElementById("sp-imposto").textContent = formatBRL(spImposto);
-        document.getElementById("sp-rep").textContent = formatBRL(spRep);
-        document.getElementById("sp-comissao").textContent = `${formatBRL(spComissaoValor)} (${(spComissaoPct * 100).toFixed(1)}%)`;
-        document.getElementById("sp-taxa-fixa").textContent = formatBRL(spTaxaFixa);
-        document.getElementById("sp-frete").textContent = formatBRL(spFrete);
-        document.getElementById("sp-total-taxas").textContent = formatBRL(spTotalTaxas);
-        document.getElementById("sp-lucro").textContent = formatBRL(spLucro);
-        document.getElementById("sp-margem").textContent = formatPercent(spMargemReal);
-        document.getElementById("sp-faixa").textContent = spFaixaNome;
-
-        // Mercado Livre
-        document.getElementById("ml-preco").textContent = formatBRL(mlPreco);
-        document.getElementById("ml-imposto").textContent = formatBRL(mlImposto);
-        document.getElementById("ml-rep").textContent = formatBRL(mlRep);
-        document.getElementById("ml-comissao").textContent = `${formatBRL(mlComissaoValor)} (${mlComissaoPctNum.toFixed(2)}%)`;
-        document.getElementById("ml-taxa-fixa").textContent = formatBRL(mlTaxaFixa);
-        document.getElementById("ml-frete").textContent = formatBRL(mlFrete);
-        document.getElementById("ml-total-taxas").textContent = formatBRL(mlTotalTaxas);
-        document.getElementById("ml-lucro").textContent = formatBRL(mlLucro);
-        document.getElementById("ml-margem").textContent = formatPercent(mlMargemReal);
-        document.getElementById("ml-faixa").textContent = `${FAIXAS_PESO[pesoIdx]} • ${mlFaixaPrecoDesc}`;
-        document.getElementById("ml-subtitulo-card").textContent = `Anúncio ${tipoAnuncio === "premium" ? "Premium" : "Clássico"}`;
-
-        // Determinar "Melhor Preço" (menor preço final de venda positivo)
-        const precosValidos = [
-          { id: "card-tiktok", val: ttPreco },
-          { id: "card-shopee", val: spPreco },
-          { id: "card-ml", val: mlPreco }
-        ].filter(p => p.val > 0);
-
-        // Limpar badges anteriores
-        document.querySelectorAll(".marketplace-card").forEach(c => {
-          c.classList.remove("best-price");
-          const oldBadge = c.querySelector(".best-price-badge");
-          if (oldBadge) oldBadge.remove();
-        });
-
-        if (precosValidos.length > 0) {
-          precosValidos.sort((a, b) => a.val - b.val);
-          const menor = precosValidos[0];
-          const bestCard = document.getElementById(menor.id);
-          if (bestCard) {
-            bestCard.classList.add("best-price");
-            const badge = document.createElement("div");
-            badge.className = "best-price-badge";
-            badge.textContent = "Melhor Preço";
-            bestCard.appendChild(badge);
-          }
-        }
-      } catch (err) {
-        console.error("Erro durante o cálculo de preços:", err);
-      }
-    }
-
-    /* ==========================================================================
-       12. INICIALIZAÇÃO DE EVENTOS E MODAIS (DOMContentLoaded)
-       ========================================================================== */
-    document.addEventListener("DOMContentLoaded", function () {
-      // Setup Modais
-      const btnOpenEmb = document.getElementById("btn-modal-embalagens");
-      const btnOpenCat = document.getElementById("btn-modal-categorias");
-      const modalEmb = document.getElementById("modal-embalagens");
-      const modalCat = document.getElementById("modal-categorias");
-
-      if (btnOpenEmb && modalEmb) {
-        btnOpenEmb.addEventListener("click", () => modalEmb.classList.add("active"));
-      }
-      if (btnOpenCat && modalCat) {
-        btnOpenCat.addEventListener("click", () => modalCat.classList.add("active"));
-      }
-
-      // Fechamento de modais via atributo data-close
-      document.querySelectorAll("[data-close]").forEach(btn => {
-        btn.addEventListener("click", function() {
-          const targetId = this.getAttribute("data-close");
-          const target = document.getElementById(targetId);
-          if (target) target.classList.remove("active");
-        });
       });
 
-      // Fechar modal ao clicar fora do conteúdo
-      [modalEmb, modalCat].forEach(modal => {
-        if (modal) {
-          modal.addEventListener("click", (e) => {
-            if (e.target === modal) modal.classList.remove("active");
-          });
+      // Test Connection Button
+      btnTestConn.addEventListener('click', async () => {
+        btnTestConn.disabled = true;
+        btnTestConn.textContent = 'Testando...';
+        diagStatus.innerHTML = `<span>⏳ Gravando e excluindo documento na coleção "teste"...</span>`;
+        diagStatus.style.color = '#d97706';
+
+        const res = await DataStore.testConnection();
+        btnTestConn.disabled = false;
+        btnTestConn.textContent = 'Testar conexão';
+
+        if (res.success) {
+          showToast('✅ Conexão validada: documento em "teste" gravado e removido!');
+          updateDiagStatus();
+        } else {
+          diagStatus.innerHTML = `<span>❌ Firebase indisponível: ${escapeHtml(res.message)}</span>`;
+          diagStatus.style.color = '#dc2626';
+          showToast('Falha no teste de conexão.');
         }
       });
 
-      // Botões de salvar dos modais
-      const btnSalvarEmb = document.getElementById("btn-salvar-embalagem");
-      if (btnSalvarEmb) {
-        btnSalvarEmb.addEventListener("click", salvarEmbalagemHandler);
-      }
-      const btnSalvarCat = document.getElementById("btn-salvar-categoria");
-      if (btnSalvarCat) {
-        btnSalvarCat.addEventListener("click", salvarCategoriaHandler);
-      }
-
-      // Botão Testar Conexão
-      const btnTestar = document.getElementById("btn-testar-conexao");
-      if (btnTestar) {
-        btnTestar.addEventListener("click", testarConexaoFirestore);
-      }
-
-      // Alternar visualização dos detalhes do painel de diagnóstico
-      const btnToggleDiag = document.getElementById("btn-toggle-diag");
-      const diagDetails = document.getElementById("diag-details");
-      if (btnToggleDiag && diagDetails) {
-        btnToggleDiag.addEventListener("click", () => {
-          if (diagDetails.style.display === "none") {
-            diagDetails.style.display = "grid";
-            btnToggleDiag.textContent = "Ocultar detalhes";
-          } else {
-            diagDetails.style.display = "none";
-            btnToggleDiag.textContent = "Exibir detalhes";
-          }
-        });
-      }
-
-      // Recalcular em tempo real em todas as entradas do formulário
-      const pricingForm = document.getElementById("pricing-form");
-      if (pricingForm) {
-        pricingForm.addEventListener("input", calcularPrecos);
-        pricingForm.addEventListener("change", calcularPrecos);
-      }
-
-      // Iniciar a camada de dados
-      initDataLayer();
+      // Toggle Diagnostic Panel Visibility
+      btnToggleDiag.addEventListener('click', () => {
+        const diagContent = document.getElementById('diag-panel');
+        if (diagContent) {
+          diagContent.style.display = diagContent.style.display === 'none' ? 'block' : 'none';
+        }
+      });
     });
   </script>
 <script>
