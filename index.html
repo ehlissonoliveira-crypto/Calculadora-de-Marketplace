@@ -635,28 +635,113 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
       border-collapse: collapse;
       font-size: 0.85rem;
       text-align: left;
-      min-width: 820px;
+      min-width: 860px;
+      border: 1px solid #cbd5e1;
     }
     .prod-table th {
-      background: #f8fafc;
-      color: #475569;
+      background: var(--ewm-navy);
+      color: #ffffff;
       font-weight: 700;
       padding: 0.75rem 0.85rem;
-      border-bottom: 2px solid #e2e8f0;
+      border-bottom: 2px solid #0f172a;
+      border-right: 1px solid rgba(255, 255, 255, 0.15);
       white-space: nowrap;
     }
+    .prod-table th:last-child {
+      border-right: none;
+    }
     .prod-table td {
-      padding: 0.7rem 0.85rem;
-      border-bottom: 1px solid #f1f5f9;
+      padding: 0.65rem 0.85rem;
+      border-bottom: 1px solid #cbd5e1;
+      border-right: 1px solid #e2e8f0;
       color: #1e293b;
       vertical-align: middle;
+      background-color: #ffffff;
     }
-    .prod-table tr:hover td {
-      background: #f8fafc;
+    .prod-table td:last-child {
+      border-right: none;
+    }
+    .prod-table tbody tr:nth-child(even) td {
+      background-color: #f8fafc;
+    }
+    .prod-table tbody tr:hover td {
+      background-color: #f1f5f9;
     }
     .prod-table td.num {
       text-align: right;
       font-variant-numeric: tabular-nums;
+    }
+
+    /* Bulk actions and Pagination */
+    .table-toolbar-batch {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 0.85rem;
+    }
+    .btn-bulk-delete {
+      background-color: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+      padding: 0.45rem 0.9rem;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: background-color 0.2s, opacity 0.2s;
+    }
+    .btn-bulk-delete:hover:not(:disabled) {
+      background-color: #fecaca;
+    }
+    .btn-bulk-delete:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .pagination-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid #e2e8f0;
+      font-size: 0.85rem;
+    }
+    .pagination-pages {
+      display: flex;
+      gap: 0.35rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .btn-page-nav {
+      padding: 0.35rem 0.7rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      color: #334155;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-page-nav:hover:not(:disabled) {
+      background: #f1f5f9;
+      border-color: #94a3b8;
+    }
+    .btn-page-nav:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .btn-page-nav.active {
+      background: var(--ewm-blue);
+      color: #ffffff;
+      border-color: var(--ewm-blue);
     }
     .best-highlight {
       color: #15803d;
@@ -1422,14 +1507,24 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
           <span>📦</span> Produtos Cadastrados &amp; Salvos
         </h2>
         <div style="font-size: 0.85rem; color: var(--text-muted);">
-          Total: <strong id="totalProdutosCount" style="color: var(--ewm-navy);">0</strong> produtos
+          <strong id="totalProdutosCount" style="color: var(--ewm-navy);">0</strong> produtos encontrados
         </div>
+      </div>
+
+      <div class="table-toolbar-batch">
+        <button type="button" class="btn-bulk-delete" id="btnExcluirSelecionados" disabled>
+          <span>🗑</span> Excluir selecionados (0)
+        </button>
+        <div id="batchFeedback" style="font-size: 0.82rem; font-weight: 600; color: #1e40af;"></div>
       </div>
 
       <div class="table-container">
         <table class="prod-table" aria-label="Tabela de produtos cadastrados">
           <thead>
             <tr>
+              <th style="width: 36px; text-align: center;">
+                <input type="checkbox" id="chkSelectAllPage" title="Selecionar todos da página atual">
+              </th>
               <th>SKU</th>
               <th>Produto</th>
               <th>Cód. Interno</th>
@@ -1437,7 +1532,6 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
               <th class="num">Preço TikTok</th>
               <th class="num">Preço Shopee</th>
               <th class="num">Preço ML</th>
-              <th>Melhor preço</th>
               <th style="text-align: center;">Ações</th>
             </tr>
           </thead>
@@ -1447,6 +1541,16 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Barra de Paginação -->
+      <div class="pagination-bar" id="paginationBar" style="display: none;">
+        <div style="color: var(--text-muted); font-size: 0.82rem;" id="paginationInfo">
+          Mostrando 0 a 0 de 0 produtos
+        </div>
+        <div class="pagination-pages" id="paginationButtons">
+          <!-- Botões gerados via script -->
+        </div>
       </div>
     </section>
 
@@ -1554,7 +1658,7 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
   <!-- Footer -->
   <footer class="ewm-footer">
     <p><strong>EWM Distribuidora</strong> • Sistema Interno de Precificação e Rentabilidade</p>
-    <p class="legal">Versão 4 • Cadastro de Produtos com importação no topo. Valores simulados para apoio à tomada de decisão. As tarifas e tabelas oficiais de frete dos marketplaces estão sujeitas a alterações pelas operadoras sem aviso prévio.</p>
+    <p class="legal">Versão 5 • Importação em massa, seleção múltipla e paginação</p>
   </footer>
 
   <script>
@@ -1657,11 +1761,14 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
       [12.50, 18.36, 20.64, 334.10, 386.70, 436.90, 486.90, 525.70]
     ];
 
-    // Estado local em memória
+    // Estado local em memória com suporte a seleção e paginação
     let state = {
       embalagens: [],
       categorias: [],
       produtos: [],
+      selectedIds: new Set(),
+      paginaAtual: 1,
+      itensPorPagina: 100,
       isOnline: false,
       lastError: null
     };
@@ -1675,6 +1782,38 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+    }
+
+    /**
+     * Parse numérico padrão brasileiro e internacional:
+     * - Aceita "6,17" -> 6.17
+     * - Aceita "1.234,56" -> 1234.56
+     * - Aceita "0,03" -> 0.03
+     * - Aceita "1234.56" -> 1234.56
+     * - Aceita "R$ 6,17" -> 6.17
+     * - Aceita "617" -> 617
+     */
+    function parsearNumero(val, defaultVal = 0) {
+      if (val === null || val === undefined) return defaultVal;
+      if (typeof val === 'number') {
+        return isNaN(val) ? defaultVal : val;
+      }
+
+      let s = String(val).trim();
+      if (!s) return defaultVal;
+
+      // Remover prefixo de moeda, espaços não separáveis e caracteres extras
+      s = s.replace(/R\$/gi, '').replace(/\s+/g, '').replace(/%/g, '');
+
+      if (s.includes(',')) {
+        // Formato brasileiro: pontos são separadores de milhar ("1.234,56" -> "1234,56")
+        s = s.replace(/\./g, '');
+        // Trocar vírgula por ponto decimal ("1234,56" -> "1234.56")
+        s = s.replace(',', '.');
+      }
+
+      const num = parseFloat(s);
+      return isNaN(num) ? defaultVal : num;
     }
 
     function formatarMoeda(val) {
@@ -1693,21 +1832,34 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
       return parts[parts.length - 1];
     }
 
-    // 5. REST Firestore API Services (Sem SDK)
+    // 5. REST Firestore API Services (Sem SDK - com paginação por nextPageToken para leitura ilimitada)
     async function apiListar(colecao) {
-      const url = `${BASE}/${colecao}?key=${API_KEY}`;
-      const res = await fetch(url);
-      if (!res.ok) {
-        let errData;
-        try { errData = await res.json(); } catch(e){}
-        const msg = (errData && errData.error && errData.error.message) ? errData.error.message : `HTTP ${res.status}`;
-        throw new Error(msg);
-      }
-      const data = await res.json();
-      if (!data.documents || !Array.isArray(data.documents)) {
-        return [];
-      }
-      return data.documents.map(doc => {
+      let todosDocs = [];
+      let pageToken = '';
+
+      do {
+        let url = `${BASE}/${colecao}?pageSize=300&key=${API_KEY}`;
+        if (pageToken) {
+          url += `&pageToken=${encodeURIComponent(pageToken)}`;
+        }
+
+        const res = await fetch(url);
+        if (!res.ok) {
+          let errData;
+          try { errData = await res.json(); } catch(e){}
+          const msg = (errData && errData.error && errData.error.message) ? errData.error.message : `HTTP ${res.status}`;
+          throw new Error(msg);
+        }
+
+        const data = await res.json();
+        if (data.documents && Array.isArray(data.documents)) {
+          todosDocs = todosDocs.concat(data.documents);
+        }
+
+        pageToken = data.nextPageToken || '';
+      } while (pageToken);
+
+      return todosDocs.map(doc => {
         const id = parseDocId(doc.name);
         const f = doc.fields || {};
         if (colecao === "embalagens") {
@@ -2240,13 +2392,13 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
         sku: document.getElementById("inputProdSku").value.trim(),
         nome: document.getElementById("inputProdNome").value.trim(),
         codInterno: document.getElementById("inputProdCodInterno").value.trim(),
-        custo: Math.max(0, parseFloat(document.getElementById("inputCusto").value) || 0),
-        etiqueta: Math.max(0, parseFloat(document.getElementById("inputEtiqueta").value) || 0),
+        custo: Math.max(0, parsearNumero(document.getElementById("inputCusto").value, 0)),
+        etiqueta: Math.max(0, parsearNumero(document.getElementById("inputEtiqueta").value, 0)),
         embalagemId: document.getElementById("selectEmbalagem").value,
-        qtdEmbalagem: Math.max(0.001, parseFloat(document.getElementById("inputQtdEmbalagem").value) || 1),
-        imposto: Math.max(0, parseFloat(document.getElementById("inputImposto").value) || 0),
-        representante: Math.max(0, parseFloat(document.getElementById("inputRepresentante").value) || 0),
-        margem: Math.max(0, parseFloat(document.getElementById("inputMargem").value) || 0),
+        qtdEmbalagem: Math.max(0.001, parsearNumero(document.getElementById("inputQtdEmbalagem").value, 1)),
+        imposto: Math.max(0, parsearNumero(document.getElementById("inputImposto").value, 0)),
+        representante: Math.max(0, parsearNumero(document.getElementById("inputRepresentante").value, 0)),
+        margem: Math.max(0, parsearNumero(document.getElementById("inputMargem").value, 0)),
         tipoAnuncioML: document.getElementById("selectTipoAnuncio").value,
         categoriaMLId: document.getElementById("selectCategoria").value,
         faixaPesoIndex: parseInt(document.getElementById("selectPeso").value, 10) || 0
@@ -2265,29 +2417,29 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
       const mlFinalPrice = res.ml.preco;
 
       // 10. Atualização dos Cards na Interface
-      // TikTok
+      // TikTok (usando propriedades corretas de res.tt)
       document.getElementById("ttPrecoFinal").textContent = formatarMoeda(ttFinalPrice);
-      document.getElementById("ttFaixaAplicada").textContent = ttFaixaText;
-      document.getElementById("ttImposto").textContent = formatarMoeda(ttImposto);
-      document.getElementById("ttRep").textContent = formatarMoeda(ttRep);
-      document.getElementById("ttComissao").textContent = formatarMoeda(ttComissao);
-      document.getElementById("ttTaxaFixa").textContent = formatarMoeda(ttTaxaFixa);
-      document.getElementById("ttFrete").textContent = formatarMoeda(ttFrete);
-      document.getElementById("ttTotalTaxas").textContent = formatarMoeda(ttTotalTaxas);
-      document.getElementById("ttLucro").textContent = formatarMoeda(ttLucro);
-      document.getElementById("ttMargemReal").textContent = formatarPct(ttMargemReal);
+      document.getElementById("ttFaixaAplicada").textContent = res.tt.faixaText || "Padrão";
+      document.getElementById("ttImposto").textContent = formatarMoeda(res.tt.imposto);
+      document.getElementById("ttRep").textContent = formatarMoeda(res.tt.rep);
+      document.getElementById("ttComissao").textContent = formatarMoeda(res.tt.comissao);
+      document.getElementById("ttTaxaFixa").textContent = formatarMoeda(res.tt.taxaFixa);
+      document.getElementById("ttFrete").textContent = formatarMoeda(res.tt.frete);
+      document.getElementById("ttTotalTaxas").textContent = formatarMoeda(res.tt.totalTaxas);
+      document.getElementById("ttLucro").textContent = formatarMoeda(res.tt.lucro);
+      document.getElementById("ttMargemReal").textContent = formatarPct(res.tt.margemReal);
 
-      // Shopee
+      // Shopee (usando propriedades corretas de res.sh)
       document.getElementById("shPrecoFinal").textContent = formatarMoeda(shFinalPrice);
-      document.getElementById("shFaixaAplicada").textContent = shFaixaText;
-      document.getElementById("shImposto").textContent = formatarMoeda(shImposto);
-      document.getElementById("shRep").textContent = formatarMoeda(shRep);
-      document.getElementById("shComissao").textContent = formatarMoeda(shComissao);
-      document.getElementById("shTaxaFixa").textContent = formatarMoeda(shTaxaFixa);
-      document.getElementById("shFrete").textContent = formatarMoeda(shFrete);
-      document.getElementById("shTotalTaxas").textContent = formatarMoeda(shTotalTaxas);
-      document.getElementById("shLucro").textContent = formatarMoeda(shLucro);
-      document.getElementById("shMargemReal").textContent = formatarPct(shMargemReal);
+      document.getElementById("shFaixaAplicada").textContent = res.sh.faixaText || "Padrão";
+      document.getElementById("shImposto").textContent = formatarMoeda(res.sh.imposto);
+      document.getElementById("shRep").textContent = formatarMoeda(res.sh.rep);
+      document.getElementById("shComissao").textContent = formatarMoeda(res.sh.comissao);
+      document.getElementById("shTaxaFixa").textContent = formatarMoeda(res.sh.taxaFixa);
+      document.getElementById("shFrete").textContent = formatarMoeda(res.sh.frete);
+      document.getElementById("shTotalTaxas").textContent = formatarMoeda(res.sh.totalTaxas);
+      document.getElementById("shLucro").textContent = formatarMoeda(res.sh.lucro);
+      document.getElementById("shMargemReal").textContent = formatarPct(res.sh.margemReal);
 
       // Mercado Livre
       document.getElementById("mlPrecoFinal").textContent = formatarMoeda(mlFinalPrice);
@@ -2393,7 +2545,7 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
       e.preventDefault();
       const id = document.getElementById("editEmbId").value;
       const nome = document.getElementById("embNome").value.trim();
-      const valor = parseFloat(document.getElementById("embValor").value);
+      const valor = parsearNumero(document.getElementById("embValor").value, 0);
       const unidade = document.getElementById("embUnidade").value;
       const msgEl = document.getElementById("embFormMsg");
 
@@ -2499,8 +2651,8 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
       e.preventDefault();
       const id = document.getElementById("editCatId").value;
       const nome = document.getElementById("catNome").value.trim();
-      const classico = parseFloat(document.getElementById("catClassico").value);
-      const premium = parseFloat(document.getElementById("catPremium").value);
+      const classico = parsearNumero(document.getElementById("catClassico").value, 0);
+      const premium = parsearNumero(document.getElementById("catPremium").value, 0);
       const msgEl = document.getElementById("catFormMsg");
 
       if (!nome) {
@@ -2586,24 +2738,135 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
       document.getElementById("btnCancelEditCat").style.display = "inline-block";
     }
 
-    // 11.B. Gerenciamento e Tabela de Produtos Salvos
-    function renderizarTabelaProdutos() {
-      const tbody = document.getElementById("produtosTableBody");
-      const countEl = document.getElementById("totalProdutosCount");
-      if (!tbody) return;
+    // 11.B. Gerenciamento e Tabela de Produtos Salvos (com Paginação e Seleção)
+    function atualizarBotaoExcluirSelecionados() {
+      const btn = document.getElementById("btnExcluirSelecionados");
+      if (!btn) return;
+      const count = state.selectedIds.size;
+      btn.textContent = `🗑 Excluir selecionados (${count})`;
+      btn.disabled = (count === 0);
+    }
 
-      countEl.textContent = state.produtos.length;
+    function renderizarPaginacao(totalItens, totalPaginas, paginaAtual) {
+      const bar = document.getElementById("paginationBar");
+      const info = document.getElementById("paginationInfo");
+      const btnsContainer = document.getElementById("paginationButtons");
 
-      if (!state.produtos || state.produtos.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" class="empty-state">Nenhum produto cadastrado ainda. Preencha o formulário acima e clique em "💾 Salvar cadastro" ou importe uma planilha.</td></tr>`;
+      if (totalItens === 0) {
+        bar.style.display = "none";
         return;
       }
 
+      bar.style.display = "flex";
+      const inicio = ((paginaAtual - 1) * state.itensPorPagina) + 1;
+      const fim = Math.min(paginaAtual * state.itensPorPagina, totalItens);
+      info.textContent = `Mostrando ${inicio} a ${fim} de ${totalItens} produtos`;
+
+      btnsContainer.innerHTML = "";
+
+      // Botão Anterior
+      const btnAnt = document.createElement("button");
+      btnAnt.type = "button";
+      btnAnt.className = "btn-page-nav";
+      btnAnt.textContent = "« Anterior";
+      btnAnt.disabled = (paginaAtual <= 1);
+      btnAnt.addEventListener("click", () => {
+        if (state.paginaAtual > 1) {
+          state.paginaAtual--;
+          renderizarTabelaProdutos();
+        }
+      });
+      btnsContainer.appendChild(btnAnt);
+
+      // Lógica de numeração de páginas compacta
+      let paginasVisiveis = [];
+      if (totalPaginas <= 7) {
+        for (let i = 1; i <= totalPaginas; i++) paginasVisiveis.push(i);
+      } else {
+        if (paginaAtual <= 4) {
+          paginasVisiveis = [1, 2, 3, 4, 5, "...", totalPaginas];
+        } else if (paginaAtual >= totalPaginas - 3) {
+          paginasVisiveis = [1, "...", totalPaginas - 4, totalPaginas - 3, totalPaginas - 2, totalPaginas - 1, totalPaginas];
+        } else {
+          paginasVisiveis = [1, "...", paginaAtual - 1, paginaAtual, paginaAtual + 1, "...", totalPaginas];
+        }
+      }
+
+      paginasVisiveis.forEach(p => {
+        if (p === "...") {
+          const span = document.createElement("span");
+          span.style.padding = "0.3rem 0.4rem";
+          span.style.color = "#94a3b8";
+          span.textContent = "...";
+          btnsContainer.appendChild(span);
+        } else {
+          const btnP = document.createElement("button");
+          btnP.type = "button";
+          btnP.className = `btn-page-nav ${p === paginaAtual ? "active" : ""}`;
+          btnP.textContent = String(p);
+          btnP.addEventListener("click", () => {
+            state.paginaAtual = p;
+            renderizarTabelaProdutos();
+          });
+          btnsContainer.appendChild(btnP);
+        }
+      });
+
+      // Botão Próxima
+      const btnProx = document.createElement("button");
+      btnProx.type = "button";
+      btnProx.className = "btn-page-nav";
+      btnProx.textContent = "Próxima »";
+      btnProx.disabled = (paginaAtual >= totalPaginas);
+      btnProx.addEventListener("click", () => {
+        if (state.paginaAtual < totalPaginas) {
+          state.paginaAtual++;
+          renderizarTabelaProdutos();
+        }
+      });
+      btnsContainer.appendChild(btnProx);
+    }
+
+    function renderizarTabelaProdutos() {
+      const tbody = document.getElementById("produtosTableBody");
+      const countEl = document.getElementById("totalProdutosCount");
+      const chkAll = document.getElementById("chkSelectAllPage");
+      if (!tbody) return;
+
+      const totalProdutos = state.produtos.length;
+      countEl.textContent = totalProdutos;
+
+      if (!state.produtos || totalProdutos === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="empty-state">Nenhum produto cadastrado ainda. Preencha o formulário acima e clique em "💾 Salvar cadastro" ou importe uma planilha.</td></tr>`;
+        renderizarPaginacao(0, 1, 1);
+        if (chkAll) {
+          chkAll.checked = false;
+          chkAll.disabled = true;
+        }
+        atualizarBotaoExcluirSelecionados();
+        return;
+      }
+
+      if (chkAll) chkAll.disabled = false;
+
+      // Calcular paginação
+      const totalPaginas = Math.ceil(totalProdutos / state.itensPorPagina) || 1;
+      if (state.paginaAtual > totalPaginas) state.paginaAtual = totalPaginas;
+      if (state.paginaAtual < 1) state.paginaAtual = 1;
+
+      const offset = (state.paginaAtual - 1) * state.itensPorPagina;
+      const produtosPagina = state.produtos.slice(offset, offset + state.itensPorPagina);
+
       tbody.innerHTML = "";
-      state.produtos.forEach(prod => {
+
+      let todosPaginaSelecionados = produtosPagina.length > 0;
+
+      produtosPagina.forEach(prod => {
         const tr = document.createElement("tr");
 
-        // Identificar menor preço entre os 3
+        const isChecked = state.selectedIds.has(prod.id);
+        if (!isChecked) todosPaginaSelecionados = false;
+
         const pTT = Number(prod.precoTikTok) || 0;
         const pSH = Number(prod.precoShopee) || 0;
         const pML = Number(prod.precoML) || 0;
@@ -2613,9 +2876,10 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
         const isSHBest = pSH > 0 && Math.abs(pSH - minVal) < 0.001;
         const isMLBest = pML > 0 && Math.abs(pML - minVal) < 0.001;
 
-        let melhorCanalLabel = prod.melhorPreco || (isTTBest ? "TikTok" : (isSHBest ? "Shopee" : "Mercado Livre"));
-
         tr.innerHTML = `
+          <td style="text-align: center;">
+            <input type="checkbox" class="chk-prod-row" data-id="${escapeHtml(prod.id)}" ${isChecked ? 'checked' : ''}>
+          </td>
           <td><strong>${escapeHtml(prod.sku || "—")}</strong></td>
           <td>${escapeHtml(prod.nome || "Sem nome")}</td>
           <td style="color: #64748b;">${escapeHtml(prod.codInterno || "—")}</td>
@@ -2623,7 +2887,6 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
           <td class="num ${isTTBest ? 'best-highlight' : ''}">${formatarMoeda(pTT)}</td>
           <td class="num ${isSHBest ? 'best-highlight' : ''}">${formatarMoeda(pSH)}</td>
           <td class="num ${isMLBest ? 'best-highlight' : ''}">${formatarMoeda(pML)}</td>
-          <td><span class="badge-best-channel">${escapeHtml(melhorCanalLabel)} (${formatarMoeda(minVal)})</span></td>
           <td style="text-align: center; white-space: nowrap;">
             <button type="button" class="btn-sm-action btn-edit" data-edit-prod="${escapeHtml(prod.id)}">Editar</button>
             <button type="button" class="btn-sm-action btn-delete" data-del-prod="${escapeHtml(prod.id)}">Excluir</button>
@@ -2631,6 +2894,13 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
         `;
         tbody.appendChild(tr);
       });
+
+      if (chkAll) {
+        chkAll.checked = todosPaginaSelecionados && produtosPagina.length > 0;
+      }
+
+      renderizarPaginacao(totalProdutos, totalPaginas, state.paginaAtual);
+      atualizarBotaoExcluirSelecionados();
     }
 
     function limparFormularioProduto() {
@@ -2854,18 +3124,20 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
           const sku = String(r.SKU || r.sku || r.Sku || `SKU-${Date.now()}-${i}`).trim();
           const nome = String(r.Produto || r.produto || r.Nome || r.nome || `Produto ${sku}`).trim();
           const codInterno = String(r.CodInterno || r.codInterno || r.Cod_Interno || r["Cód. Interno"] || "").trim();
-          const custo = Math.max(0, parseFloat(r.Custo || r.custo) || 0);
+          
+          // Parse numérico resiliente ao formato brasileiro (ex: "6,17" -> 6.17, "1.234,56" -> 1234.56)
+          const custo = Math.max(0, parsearNumero(r.Custo !== undefined ? r.Custo : r.custo, 0));
 
           if (custo <= 0) {
             erros++;
             continue;
           }
 
-          const etiqueta = parseFloat(r.Etiqueta || r.etiqueta) || 0.03;
-          const qtdEmb = parseFloat(r.Quantidade || r.quantidade || r.Qtd) || 1;
-          const imposto = parseFloat(r.Imposto || r.imposto) || 12;
-          const rep = parseFloat(r.Representante || r.representante) || 5;
-          const margem = parseFloat(r.Margem || r.margem) || 15;
+          const etiqueta = parsearNumero(r.Etiqueta !== undefined ? r.Etiqueta : r.etiqueta, 0.03);
+          const qtdEmb = Math.max(0.001, parsearNumero(r.Quantidade !== undefined ? r.Quantidade : (r.quantidade !== undefined ? r.quantidade : r.Qtd), 1));
+          const imposto = parsearNumero(r.Imposto !== undefined ? r.Imposto : r.imposto, 12);
+          const rep = parsearNumero(r.Representante !== undefined ? r.Representante : r.representante, 5);
+          const margem = parsearNumero(r.Margem !== undefined ? r.Margem : r.margem, 15);
           const tipoAnuncio = (String(r.AnuncioML || r.tipoAnuncio || "classico")).toLowerCase().includes("prem") ? "premium" : "classico";
 
           // Mapear embalagem por nome ou pegar primeira
@@ -3007,8 +3279,8 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
 
       // Botão "Precificar" (cálculo rápido sem salvar)
       document.getElementById("btnPrecificar").addEventListener("click", () => {
-        const custoVal = parseFloat(document.getElementById("inputCusto").value);
-        if (isNaN(custoVal) || custoVal <= 0) {
+        const custoVal = parsearNumero(document.getElementById("inputCusto").value, 0);
+        if (custoVal <= 0) {
           alert("Para precificar, informe um Custo do produto maior que zero.");
           document.getElementById("inputCusto").focus();
           return;
@@ -3016,7 +3288,7 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
         calcularPrecos();
         const msgEl = document.getElementById("cadFeedbackMsg");
         msgEl.style.color = "#1e40af";
-        msgEl.textContent = "⚡ Preços atualizados nos cards!";
+        msgEl.textContent = "⚡ Preços atualizados!";
         setTimeout(() => { msgEl.textContent = ""; }, 2500);
         document.getElementById("resultsGrid").scrollIntoView({ behavior: 'smooth' });
       });
@@ -3039,7 +3311,25 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
 
       document.getElementById("btnBaixarPlanilhaExemplo").addEventListener("click", baixarPlanilhaExemplo);
 
-      // Delegação de cliques na tabela de produtos
+      // Atualização de exclusão individual para também desmarcar do Set de selecionados
+    async function excluirProduto(id) {
+      if (!confirm("Confirma a exclusão deste produto cadastrado?")) return;
+
+      try {
+        await apiExcluir("produtos", id);
+        const reloaded = await apiListar("produtos");
+        state.produtos = reloaded;
+        salvarLocal("produtos", reloaded);
+        atualizarPainelDiagnostico(true, `Conexão com Firebase: ✅ conectado — ${reloaded.length} produtos cadastrados`, "Exclusão do produto confirmada.");
+      } catch (err) {
+        state.produtos = state.produtos.filter(p => p.id !== id);
+        salvarLocal("produtos", state.produtos);
+        atualizarPainelDiagnostico(false, `Excluído localmente (offline): ${err.message}`, "");
+      }
+
+      state.selectedIds.delete(id);
+      renderizarTabelaProdutos();
+    } (Edição, Exclusão e Seleção por Checkbox)
       document.getElementById("produtosTableBody").addEventListener("click", (e) => {
         const btnEdit = e.target.closest("[data-edit-prod]");
         if (btnEdit) {
@@ -3051,6 +3341,93 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
           excluirProduto(btnDel.getAttribute("data-del-prod"));
           return;
         }
+      });
+
+      // Listener para checkboxes individuais
+      document.getElementById("produtosTableBody").addEventListener("change", (e) => {
+        const chk = e.target.closest(".chk-prod-row");
+        if (chk) {
+          const id = chk.getAttribute("data-id");
+          if (chk.checked) {
+            state.selectedIds.add(id);
+          } else {
+            state.selectedIds.delete(id);
+          }
+          atualizarBotaoExcluirSelecionados();
+
+          // Sincronizar checkbox do cabeçalho
+          const chkAll = document.getElementById("chkSelectAllPage");
+          const allRowCheckboxes = document.querySelectorAll(".chk-prod-row");
+          if (chkAll && allRowCheckboxes.length > 0) {
+            chkAll.checked = Array.from(allRowCheckboxes).every(c => c.checked);
+          }
+        }
+      });
+
+      // Checkbox "Selecionar todos da página atual"
+      const chkSelectAll = document.getElementById("chkSelectAllPage");
+      if (chkSelectAll) {
+        chkSelectAll.addEventListener("change", (e) => {
+          const isChecked = e.target.checked;
+          const allRowCheckboxes = document.querySelectorAll(".chk-prod-row");
+          allRowCheckboxes.forEach(chk => {
+            chk.checked = isChecked;
+            const id = chk.getAttribute("data-id");
+            if (isChecked) {
+              state.selectedIds.add(id);
+            } else {
+              state.selectedIds.delete(id);
+            }
+          });
+          atualizarBotaoExcluirSelecionados();
+        });
+      }
+
+      // Botão "Excluir selecionados" em massa
+      document.getElementById("btnExcluirSelecionados").addEventListener("click", async () => {
+        const totalSel = state.selectedIds.size;
+        if (totalSel === 0) return;
+
+        if (!confirm(`Atenção: deseja realmente excluir ${totalSel} produto(s) selecionado(s)? Esta ação não pode ser desfeita.`)) {
+          return;
+        }
+
+        const feedbackEl = document.getElementById("batchFeedback");
+        feedbackEl.textContent = `⏳ Excluindo ${totalSel} produto(s)...`;
+        const idsParaExcluir = Array.from(state.selectedIds);
+
+        let excluidosComSucesso = 0;
+        let erros = 0;
+
+        for (const id of idsParaExcluir) {
+          try {
+            await apiExcluir("produtos", id);
+            excluidosComSucesso++;
+          } catch (err) {
+            console.warn(`Erro ao excluir produto ${id}:`, err.message);
+            erros++;
+          }
+        }
+
+        // Limpar seleção
+        state.selectedIds.clear();
+
+        // Recarregar lista completa do Firestore
+        try {
+          const reloaded = await apiListar("produtos");
+          state.produtos = reloaded;
+          salvarLocal("produtos", reloaded);
+          atualizarPainelDiagnostico(true, `Conexão com Firebase: ✅ conectado — ${reloaded.length} produtos cadastrados`, "Exclusão em massa finalizada.");
+        } catch (err) {
+          state.produtos = state.produtos.filter(p => !idsParaExcluir.includes(p.id));
+          salvarLocal("produtos", state.produtos);
+          atualizarPainelDiagnostico(false, `Exclusão local: ${err.message}`, "");
+        }
+
+        feedbackEl.textContent = `✅ ${excluidosComSucesso} produto(s) excluído(s) com sucesso! ${erros > 0 ? `(${erros} falhas)` : ''}`;
+        setTimeout(() => { feedbackEl.textContent = ""; }, 4000);
+
+        renderizarTabelaProdutos();
       });
 
       // Modais: Abertura
