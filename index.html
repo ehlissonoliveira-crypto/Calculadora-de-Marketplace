@@ -1658,7 +1658,7 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
   <!-- Footer -->
   <footer class="ewm-footer">
     <p><strong>EWM Distribuidora</strong> • Sistema Interno de Precificação e Rentabilidade</p>
-    <p class="legal">Versão 6 • Correção do carregamento dos dados</p>
+    <p class="legal">Versão 7 • Correção da vírgula decimal na importação</p>
   </footer>
 
   <script>
@@ -1793,12 +1793,10 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
 
     /**
      * Parse numérico padrão brasileiro e internacional:
-     * - Aceita "6,17" -> 6.17
-     * - Aceita "1.234,56" -> 1234.56
-     * - Aceita "0,03" -> 0.03
-     * - Aceita "1234.56" -> 1234.56
-     * - Aceita "R$ 6,17" -> 6.17
-     * - Aceita "617" -> 617
+     * - Regra mandatória: SE contém VÍRGULA, ela é SEMPRE o separador DECIMAL, NUNCA milhar.
+     *   Passos: remover pontos de milhar ("1.234,56" -> "1234,56"), depois trocar vírgula por ponto ("1234.56").
+     * - "3,85" -> 3.85 | "6,17" -> 6.17 | "1.99" -> 1.99 | "42,19" -> 42.19
+     * - "274.24" -> 274.24 | "0,03" -> 0.03 | "12" -> 12 | "1.234,56" -> 1234.56
      */
     function parsearNumero(val, defaultVal = 0) {
       if (val === null || val === undefined) return defaultVal;
@@ -1809,18 +1807,122 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
       let s = String(val).trim();
       if (!s) return defaultVal;
 
-      // Remover prefixo de moeda, espaços não separáveis e caracteres extras
+      // Limpar prefixo de moeda (R$), espaços normais e não separáveis, símbolos percentuais
       s = s.replace(/R\$/gi, '').replace(/\s+/g, '').replace(/%/g, '');
 
       if (s.includes(',')) {
-        // Formato brasileiro: pontos são separadores de milhar ("1.234,56" -> "1234,56")
+        // Regra de vírgula decimal: VÍRGULA é o separador decimal brasileiro.
+        // 1) Remover todos os pontos (separadores de milhar no padrão BR, ex: "1.234,56" -> "1234,56")
         s = s.replace(/\./g, '');
-        // Trocar vírgula por ponto decimal ("1234,56" -> "1234.56")
-        s = s.replace(',', '.');
+        // 2) Trocar TODAS as vírgulas por ponto ("1234,56" -> "1234.56")
+        s = s.replace(/,/g, '.');
       }
 
       const num = parseFloat(s);
       return isNaN(num) ? defaultVal : num;
+    }
+
+    /**
+     * Parser CSV robusto com suporte a delimitador automático (; ou ,)
+     * e tratamento completo de campos entre aspas para preservar vírgulas decimais ("3,85").
+     */
+    function parseCSVText(csvText) {
+      if (!csvText) return [];
+      if (csvText.charCodeAt(0) === 0xFEFF) {
+        csvText = csvText.slice(1); // Remover BOM UTF-8
+      }
+
+      // Detecção do delimitador: ponto e vírgula (padrão Brasil) vs vírgula
+      const firstLine = csvText.split(/\r\n|\n|\r/)[0] || "";
+      let commaCount = 0;
+      let semiCount = 0;
+      let inQ = false;
+      for (let i = 0; i < firstLine.length; i++) {
+        const c = firstLine[i];
+        if (c === '"') inQ = !inQ;
+        else if (!inQ) {
+          if (c === ',') commaCount++;
+          else if (c === ';') semiCount++;
+        }
+      }
+      const delimiter = semiCount >= commaCount ? ';' : ',';
+
+      // Parsing respeitando aspas
+      const lines = [];
+      let currentRow = [];
+      let currentVal = '';
+      inQ = false;
+
+      for (let i = 0; i < csvText.length; i++) {
+        const ch = csvText[i];
+        const nextCh = csvText[i + 1];
+
+        if (inQ) {
+          if (ch === '"') {
+            if (nextCh === '"') {
+              currentVal += '"';
+              i++;
+            } else {
+              inQ = false;
+            }
+          } else {
+            currentVal += ch;
+          }
+        } else {
+          if (ch === '"') {
+            inQ = true;
+          } else if (ch === delimiter) {
+            currentRow.push(currentVal.trim());
+            currentVal = '';
+          } else if (ch === '\r') {
+            if (nextCh === '\n') i++;
+            currentRow.push(currentVal.trim());
+            currentVal = '';
+            if (currentRow.some(col => col.length > 0)) {
+              lines.push(currentRow);
+            }
+            currentRow = [];
+          } else if (ch === '\n') {
+            currentRow.push(currentVal.trim());
+            currentVal = '';
+            if (currentRow.some(col => col.length > 0)) {
+              lines.push(currentRow);
+            }
+            currentRow = [];
+          } else {
+            currentVal += ch;
+          }
+        }
+      }
+
+      if (currentVal.length > 0 || currentRow.length > 0) {
+        currentRow.push(currentVal.trim());
+        if (currentRow.some(col => col.length > 0)) {
+          lines.push(currentRow);
+        }
+      }
+
+      if (lines.length < 2) return [];
+
+      const headers = lines[0].map(h => h.replace(/^["']|["']$/g, '').trim());
+      const result = [];
+
+      for (let r = 1; r < lines.length; r++) {
+        const row = lines[r];
+        const obj = {};
+        let hasData = false;
+        for (let c = 0; c < headers.length; c++) {
+          const headerName = headers[c];
+          const cellVal = (row[c] !== undefined ? row[c] : '').replace(/^["']|["']$/g, '').trim();
+          obj[headerName] = cellVal;
+          if (cellVal) hasData = true;
+        }
+        if (hasData) {
+          result.push(obj);
+        }
+      }
+
+      return result;
     }
 
     function formatarMoeda(val) {
@@ -3196,13 +3298,15 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
       renderizarTabelaProdutos();
     }
 
-    // 11.C. Download de Planilha de Exemplo e Importação em Massa (SheetJS)
+    // 11.C. Download de Planilha de Exemplo e Importação em Massa (SheetJS e CSV nativo)
     function baixarPlanilhaExemplo() {
-      const csvCabecalho = "SKU,Produto,CodInterno,Custo,Etiqueta,Embalagem,Quantidade,Imposto,Representante,Margem,AnuncioML,CategoriaML,FaixaPeso\n";
+      const csvCabecalho = "SKU;Produto;CodInterno;Custo;Etiqueta;Embalagem;Quantidade;Imposto;Representante;Margem;AnuncioML;CategoriaML;FaixaPeso\r\n";
       const linhasExemplo = [
-        'EWM-FER-001,"Jogo de Chaves Precision 24 Peças","INT-0101",35.50,0.03,"P",1,12,5,15,"classico","Ferramentas e Construção","Até 0,3 kg"',
-        'EWM-MOD-002,"Kit 3 Meias Esportivas Algodão","INT-0204",18.00,0.03,"PP",1,12,5,18,"premium","Moda e Acessórios","Até 0,3 kg"'
-      ].join("\n");
+        'EST-LAM-018;ESTILETE CABO EMBORRACHADO C/ LAMINA 18MM;INT-3301;3,85;0,03;P;1;12;5;15;classico;Ferramentas e Construção;Até 0,3 kg',
+        'EWM-MOD-002;Kit 3 Meias Esportivas Algodão;INT-0204;6,17;0,03;PP;1;12;5;18;premium;Moda e Acessórios;Até 0,3 kg',
+        'EWM-FER-003;Jogo de Chaves Precision 24 Peças;INT-0101;42,19;0,03;P;1;12;5;15;classico;Ferramentas e Construção;Até 0,3 kg',
+        'EWM-IND-004;Furadeira de Impacto Industrial;INT-0992;274.24;0,03;M;1;12;5;15;classico;Indústria e Comércio;De 1,5 a 2 kg'
+      ].join("\r\n");
 
       const blob = new Blob(["\uFEFF" + csvCabecalho + linhasExemplo], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
@@ -3221,15 +3325,31 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
       statusBox.textContent = `⏳ Lendo arquivo "${file.name}"...`;
 
       try {
-        const buffer = await file.arrayBuffer();
-        if (typeof XLSX === "undefined") {
-          throw new Error("Biblioteca SheetJS não está carregada.");
-        }
+        let rows = [];
+        const isCsv = file.name.toLowerCase().endsWith(".csv") || file.type === "text/csv" || file.type === "application/vnd.ms-excel";
 
-        const wb = XLSX.read(buffer, { type: "array" });
-        const sheetName = wb.SheetNames[0];
-        const sheet = wb.Sheets[sheetName];
-        const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+        if (isCsv) {
+          const text = await file.text();
+          rows = parseCSVText(text);
+          // Fallback para SheetJS caso o texto do CSV não tenha retornado objetos
+          if (!rows || rows.length === 0) {
+            const buffer = await file.arrayBuffer();
+            if (typeof XLSX !== "undefined") {
+              const wb = XLSX.read(buffer, { type: "array" });
+              const sheet = wb.Sheets[wb.SheetNames[0]];
+              rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+            }
+          }
+        } else {
+          // Arquivos XLSX / XLS
+          if (typeof XLSX === "undefined") {
+            throw new Error("Biblioteca SheetJS não está carregada.");
+          }
+          const buffer = await file.arrayBuffer();
+          const wb = XLSX.read(buffer, { type: "array" });
+          const sheet = wb.Sheets[wb.SheetNames[0]];
+          rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+        }
 
         if (!rows || rows.length === 0) {
           throw new Error("A planilha está vazia ou sem linhas legíveis.");
@@ -3239,21 +3359,40 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
 
         let sucessos = 0;
         let erros = 0;
+        const avisosDescarte = [];
 
         for (let i = 0; i < rows.length; i++) {
           const r = rows[i];
           const sku = String(r.SKU || r.sku || r.Sku || `SKU-${Date.now()}-${i}`).trim();
           const nome = String(r.Produto || r.produto || r.Nome || r.nome || `Produto ${sku}`).trim();
           const codInterno = String(r.CodInterno || r.codInterno || r.Cod_Interno || r["Cód. Interno"] || "").trim();
-          
-          // Parse numérico resiliente ao formato brasileiro (ex: "6,17" -> 6.17, "1.234,56" -> 1234.56)
-          const custo = Math.max(0, parsearNumero(r.Custo !== undefined ? r.Custo : r.custo, 0));
 
-          if (custo <= 0) {
+          // Resgate do custo original antes de qualquer modificação
+          const rawCusto = r.Custo !== undefined ? r.Custo : (r.custo !== undefined ? r.custo : (r.Valor !== undefined ? r.Valor : r.valor));
+          const custo = parsearNumero(rawCusto, 0);
+
+          // Validação de segurança obrigatória:
+          // Se o custo for <= 0, > 100000 ou se o parse gerou um valor anomalamente inflado
+          // a partir de decimal com vírgula (ex: "3,85" -> 385), rejeitar para não corromper a base.
+          let parseSuspeito = false;
+          if (typeof rawCusto === "string" && rawCusto.includes(",")) {
+            const parteInteiraStr = rawCusto.split(",")[0].replace(/\D/g, "");
+            const parteInteira = parseInt(parteInteiraStr, 10) || 0;
+            if (parteInteira < 100 && custo >= (parteInteira * 10) && parteInteira > 0) {
+              parseSuspeito = true;
+            }
+          }
+
+          if (custo <= 0 || custo > 100000 || parseSuspeito) {
             erros++;
+            const motivo = parseSuspeito
+              ? `Parsing suspeito: original "${rawCusto}" resultou em ${custo}`
+              : (custo <= 0 ? `Custo zero ou negativo (${custo})` : `Custo excede R$ 100.000 (${custo})`);
+            avisosDescarte.push(`Linha ${i + 1} (${sku}): ${motivo}`);
             continue;
           }
 
+          // Parse seguro de todos os demais campos numéricos com suporte a vírgula brasileira
           const etiqueta = parsearNumero(r.Etiqueta !== undefined ? r.Etiqueta : r.etiqueta, 0.03);
           const qtdEmb = Math.max(0.001, parsearNumero(r.Quantidade !== undefined ? r.Quantidade : (r.quantidade !== undefined ? r.quantidade : r.Qtd), 1));
           const imposto = parsearNumero(r.Imposto !== undefined ? r.Imposto : r.imposto, 12);
@@ -3271,11 +3410,15 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
           let catObj = state.categorias.find(c => c.nome.toUpperCase().includes(catNomeRaw));
           if (!catObj && state.categorias.length > 0) catObj = state.categorias[0];
 
-          // Mapear faixa de peso
+          // Mapear faixa de peso normalizando vírgula e ponto
           const faixaPesoRaw = String(r.FaixaPeso || r.peso || "").trim().toLowerCase();
           let faixaIdx = 0;
           if (faixaPesoRaw) {
-            const foundIdx = PESO_FAIXAS.findIndex(f => f.toLowerCase().includes(faixaPesoRaw));
+            const faixaNorm = faixaPesoRaw.replace(',', '.');
+            const foundIdx = PESO_FAIXAS.findIndex(f => {
+              const fNorm = f.toLowerCase().replace(',', '.');
+              return fNorm.includes(faixaNorm) || faixaNorm.includes(fNorm);
+            });
             if (foundIdx >= 0) faixaIdx = foundIdx;
           }
 
@@ -3323,7 +3466,6 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
             sucessos++;
           } catch(err) {
             console.warn("Erro ao salvar produto da planilha:", err.message);
-            // fallback offline
             state.produtos.unshift({ id: "imp_" + Date.now() + "_" + i, ...itemProd });
             sucessos++;
           }
@@ -3343,8 +3485,16 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
         salvarLocal("produtos", state.produtos);
         renderizarTabelaProdutos();
 
-        statusBox.textContent = `✅ Importação concluída! ${sucessos} produtos importados com sucesso. ${erros > 0 ? `(${erros} ignorados por custo inválido)` : ''}`;
-        setTimeout(() => { statusBox.style.display = "none"; }, 6000);
+        let resumo = `✅ Importação concluída! ${sucessos} produtos importados com sucesso.`;
+        if (erros > 0) {
+          resumo += ` (${erros} linhas ignoradas por custo inválido/suspeito)`;
+          const diagLogEl = document.getElementById("diagLog");
+          if (diagLogEl) {
+            diagLogEl.textContent = `Avisos de importação: ${avisosDescarte.slice(0, 5).join(" | ")}${avisosDescarte.length > 5 ? ` (+${avisosDescarte.length - 5} outros)` : ''}`;
+          }
+        }
+        statusBox.textContent = resumo;
+        setTimeout(() => { statusBox.style.display = "none"; }, 7000);
       } catch (err) {
         statusBox.textContent = `❌ Erro na importação: ${err.message}`;
         setTimeout(() => { statusBox.style.display = "none"; }, 7000);
