@@ -1658,7 +1658,7 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
   <!-- Footer -->
   <footer class="ewm-footer">
     <p><strong>EWM Distribuidora</strong> • Sistema Interno de Precificação e Rentabilidade</p>
-    <p class="legal">Versão 5 • Importação em massa, seleção múltipla e paginação</p>
+    <p class="legal">Versão 6 • Correção do carregamento dos dados</p>
   </footer>
 
   <script>
@@ -1773,6 +1773,13 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
       lastError: null
     };
 
+    // Estado do carregamento individual das coleções
+    const loadStatus = {
+      embalagens: { done: false, ok: false, count: 0, err: null },
+      categorias: { done: false, ok: false, count: 0, err: null },
+      produtos: { done: false, ok: false, count: 0, err: null }
+    };
+
     // 4. Funções Auxiliares Essenciais (definidas antes do uso)
     function escapeHtml(str) {
       if (typeof str !== 'string') return '';
@@ -1832,34 +1839,41 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
       return parts[parts.length - 1];
     }
 
-    // 5. REST Firestore API Services (Sem SDK - com paginação por nextPageToken para leitura ilimitada)
-    async function apiListar(colecao) {
-      let todosDocs = [];
-      let pageToken = '';
-
-      do {
-        let url = `${BASE}/${colecao}?pageSize=300&key=${API_KEY}`;
-        if (pageToken) {
-          url += `&pageToken=${encodeURIComponent(pageToken)}`;
+    // Requisição HTTP segura com AbortController e timeout de 15 segundos
+    async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const response = await fetch(url, {
+          ...options,
+          signal: controller.signal
+        });
+        return response;
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          throw new Error(`Tempo limite esgotado (${timeoutMs / 1000}s) na comunicação com Firestore.`);
         }
+        throw err;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
 
-        const res = await fetch(url);
-        if (!res.ok) {
-          let errData;
-          try { errData = await res.json(); } catch(e){}
-          const msg = (errData && errData.error && errData.error.message) ? errData.error.message : `HTTP ${res.status}`;
-          throw new Error(msg);
-        }
+    // 5. REST Firestore API Services (Sem SDK - com tratamento robusto de erros)
+    async function apiListarColecaoSimples(colecao) {
+      const url = `${BASE}/${colecao}?pageSize=300&key=${API_KEY}`;
+      const res = await fetchWithTimeout(url, {}, 15000);
+      if (!res.ok) {
+        let errData;
+        try { errData = await res.json(); } catch(e){}
+        const msg = (errData && errData.error && errData.error.message) ? errData.error.message : `HTTP ${res.status}`;
+        throw new Error(msg);
+      }
 
-        const data = await res.json();
-        if (data.documents && Array.isArray(data.documents)) {
-          todosDocs = todosDocs.concat(data.documents);
-        }
+      const data = await res.json();
+      const docs = data.documents && Array.isArray(data.documents) ? data.documents : [];
 
-        pageToken = data.nextPageToken || '';
-      } while (pageToken);
-
-      return todosDocs.map(doc => {
+      return docs.map(doc => {
         const id = parseDocId(doc.name);
         const f = doc.fields || {};
         if (colecao === "embalagens") {
@@ -1876,36 +1890,93 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
             classico: f.classico ? Number(f.classico.doubleValue !== undefined ? f.classico.doubleValue : f.classico.integerValue || 0) : 0,
             premium: f.premium ? Number(f.premium.doubleValue !== undefined ? f.premium.doubleValue : f.premium.integerValue || 0) : 0
           };
-        } else if (colecao === "produtos") {
-          const numVal = (field) => {
-            if (!field) return 0;
-            if (field.doubleValue !== undefined) return Number(field.doubleValue);
-            if (field.integerValue !== undefined) return Number(field.integerValue);
-            return 0;
-          };
-          return {
-            id: id,
-            sku: f.sku && f.sku.stringValue ? f.sku.stringValue : "",
-            nome: f.nome && f.nome.stringValue ? f.nome.stringValue : "",
-            codInterno: f.codInterno && f.codInterno.stringValue ? f.codInterno.stringValue : "",
-            custo: numVal(f.custo),
-            etiqueta: numVal(f.etiqueta),
-            embalagemId: f.embalagemId && f.embalagemId.stringValue ? f.embalagemId.stringValue : "",
-            qtdEmbalagem: numVal(f.qtdEmbalagem) || 1,
-            imposto: numVal(f.imposto),
-            representante: numVal(f.representante),
-            margem: numVal(f.margem),
-            tipoAnuncioML: f.tipoAnuncioML && f.tipoAnuncioML.stringValue ? f.tipoAnuncioML.stringValue : "classico",
-            categoriaMLId: f.categoriaMLId && f.categoriaMLId.stringValue ? f.categoriaMLId.stringValue : "",
-            faixaPesoIndex: numVal(f.faixaPesoIndex),
-            precoTikTok: numVal(f.precoTikTok),
-            precoShopee: numVal(f.precoShopee),
-            precoML: numVal(f.precoML),
-            melhorPreco: f.melhorPreco && f.melhorPreco.stringValue ? f.melhorPreco.stringValue : ""
-          };
         }
         return { id };
       });
+    }
+
+    // Loop de paginação da leitura de produtos com guarda anti-loop e suporte a pageSize=1000 / pageSize=100
+    async function apiListarProdutos() {
+      let todosDocs = [];
+      let pageToken = '';
+      let pageSize = 1000;
+      let iteracoes = 0;
+      const MAX_ITERACOES = 50;
+      let partialError = null;
+
+      while (iteracoes < MAX_ITERACOES) {
+        iteracoes++;
+        let url = `${BASE}/produtos?pageSize=${pageSize}&key=${API_KEY}`;
+        if (pageToken) {
+          url += `&pageToken=${encodeURIComponent(pageToken)}`;
+        }
+
+        try {
+          const res = await fetchWithTimeout(url, {}, 15000);
+          if (!res.ok) {
+            // Se pageSize=1000 for rejeitado na primeira tentativa, tenta com pageSize=100
+            if (pageSize === 1000 && iteracoes === 1) {
+              console.warn("Firestore rejeitou pageSize=1000. Re-tentando com pageSize=100...");
+              pageSize = 100;
+              iteracoes = 0;
+              continue;
+            }
+            let errData;
+            try { errData = await res.json(); } catch(e){}
+            const msg = (errData && errData.error && errData.error.message) ? errData.error.message : `HTTP ${res.status}`;
+            throw new Error(msg);
+          }
+
+          const data = await res.json();
+          const docs = data.documents && Array.isArray(data.documents) ? data.documents : [];
+          if (docs.length === 0) {
+            break;
+          }
+          todosDocs = todosDocs.concat(docs);
+
+          if (!data.nextPageToken) {
+            break;
+          }
+          pageToken = data.nextPageToken;
+        } catch (err) {
+          console.warn("Aviso no loop de produtos:", err.message);
+          partialError = err;
+          break; // Preserva o que já foi lido e não trava
+        }
+      }
+
+      const produtos = todosDocs.map(doc => {
+        const id = parseDocId(doc.name);
+        const f = doc.fields || {};
+        const numVal = (field) => {
+          if (!field) return 0;
+          if (field.doubleValue !== undefined) return Number(field.doubleValue);
+          if (field.integerValue !== undefined) return Number(field.integerValue);
+          return 0;
+        };
+        return {
+          id: id,
+          sku: f.sku && f.sku.stringValue ? f.sku.stringValue : "",
+          nome: f.nome && f.nome.stringValue ? f.nome.stringValue : "",
+          codInterno: f.codInterno && f.codInterno.stringValue ? f.codInterno.stringValue : "",
+          custo: numVal(f.custo),
+          etiqueta: numVal(f.etiqueta),
+          embalagemId: f.embalagemId && f.embalagemId.stringValue ? f.embalagemId.stringValue : "",
+          qtdEmbalagem: numVal(f.qtdEmbalagem) || 1,
+          imposto: numVal(f.imposto),
+          representante: numVal(f.representante),
+          margem: numVal(f.margem),
+          tipoAnuncioML: f.tipoAnuncioML && f.tipoAnuncioML.stringValue ? f.tipoAnuncioML.stringValue : "classico",
+          categoriaMLId: f.categoriaMLId && f.categoriaMLId.stringValue ? f.categoriaMLId.stringValue : "",
+          faixaPesoIndex: numVal(f.faixaPesoIndex),
+          precoTikTok: numVal(f.precoTikTok),
+          precoShopee: numVal(f.precoShopee),
+          precoML: numVal(f.precoML),
+          melhorPreco: f.melhorPreco && f.melhorPreco.stringValue ? f.melhorPreco.stringValue : ""
+        };
+      });
+
+      return { produtos, error: partialError };
     }
 
     async function apiCriar(colecao, item) {
@@ -1951,11 +2022,11 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
         };
       }
 
-      const res = await fetch(url, {
+      const res = await fetchWithTimeout(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fields })
-      });
+      }, 15000);
 
       if (!res.ok) {
         let errData;
@@ -2005,11 +2076,11 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
         };
       }
 
-      const res = await fetch(url, {
+      const res = await fetchWithTimeout(url, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fields })
-      });
+      }, 15000);
 
       if (!res.ok) {
         let errData;
@@ -2022,9 +2093,9 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
 
     async function apiExcluir(colecao, id) {
       const url = `${BASE}/${colecao}/${id}?key=${API_KEY}`;
-      const res = await fetch(url, {
+      const res = await fetchWithTimeout(url, {
         method: "DELETE"
-      });
+      }, 15000);
       if (!res.ok) {
         let errData;
         try { errData = await res.json(); } catch(e){}
@@ -2069,76 +2140,118 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
       }
     }
 
-    // 7. Inicialização de Dados
-    async function carregarDadosIniciais() {
-      atualizarPainelDiagnostico(false, "Conectando ao Firestore via REST...", "Consultando coleções...");
-      let embs = [];
-      let cats = [];
-      let prods = [];
-      let erroOcorrido = null;
+    function atualizarStatusGeral() {
+      const badge = document.getElementById("diagStatusBadge");
+      const text = document.getElementById("diagMessage");
+      const log = document.getElementById("diagLog");
 
-      try {
-        embs = await apiListar("embalagens");
-        cats = await apiListar("categorias");
+      const allDone = loadStatus.embalagens.done && loadStatus.categorias.done && loadStatus.produtos.done;
+      const anyError = loadStatus.embalagens.err || loadStatus.categorias.err || loadStatus.produtos.err;
+      const allOk = loadStatus.embalagens.ok && loadStatus.categorias.ok && loadStatus.produtos.ok;
 
-        // Se vazias no servidor, semear padrões via POST
-        if (embs.length === 0) {
-          atualizarPainelDiagnostico(true, "Semeando embalagens padrão no Firestore...", "");
-          for (const item of DEFAULT_EMBALAGENS) {
-            await apiCriar("embalagens", item);
-          }
-          embs = await apiListar("embalagens");
-        }
-
-        if (cats.length === 0) {
-          atualizarPainelDiagnostico(true, "Semeando categorias padrão no Firestore...", "");
-          for (const item of DEFAULT_CATEGORIAS) {
-            await apiCriar("categorias", item);
-          }
-          cats = await apiListar("categorias");
-        }
-
-        try {
-          prods = await apiListar("produtos");
-        } catch(e) {
-          console.warn("Coleção produtos vazia ou inicializando:", e.message);
-          prods = [];
-        }
-
-        state.embalagens = embs;
-        state.categorias = cats;
-        state.produtos = prods;
-        salvarLocal("embalagens", embs);
-        salvarLocal("categorias", cats);
-        salvarLocal("produtos", prods);
-
-        atualizarPainelDiagnostico(
-          true,
-          `Conexão com Firebase: ✅ conectado — ${embs.length} embalagens, ${cats.length} categorias, ${prods.length} produtos`,
-          `REST API OK: Endpoint default com documentos validados.`
-        );
-      } catch (err) {
-        erroOcorrido = err.message || "Erro desconhecido";
-        // Fallback localStorage ou mock em memória
-        const localEmbs = lerLocal("embalagens");
-        const localCats = lerLocal("categorias");
-        const localProds = lerLocal("produtos");
-        state.embalagens = (localEmbs && localEmbs.length > 0) ? localEmbs : [...DEFAULT_EMBALAGENS];
-        state.categorias = (localCats && localCats.length > 0) ? localCats : [...DEFAULT_CATEGORIAS];
-        state.produtos = Array.isArray(localProds) ? localProds : [];
-
-        atualizarPainelDiagnostico(
-          false,
-          `❌ [${erroOcorrido}] — Usando dados locais em cache`,
-          `Fallback ativo. Tentativa na URL: ${BASE}. Mensagem: ${erroOcorrido}`
-        );
+      if (allOk) {
+        badge.className = "diag-status-pill online";
+        badge.textContent = "✅ Dados salvos na nuvem";
+        text.innerHTML = `Conexão com Firebase: ✅ conectado — ${state.embalagens.length} embalagens, ${state.categorias.length} categorias, ${state.produtos.length} produtos`;
+        log.textContent = `Sincronização concluída com sucesso via REST API (timeout 15s ativo).`;
+      } else if (!allDone) {
+        badge.className = "diag-status-pill online";
+        badge.textContent = "🔄 Sincronizando dados...";
+        text.innerHTML = `Carregando do Firestore: Embalagens (${loadStatus.embalagens.done ? (loadStatus.embalagens.ok ? '✅' : '⚠️') : '⏳'}), Categorias (${loadStatus.categorias.done ? (loadStatus.categorias.ok ? '✅' : '⚠️') : '⏳'}), Produtos (${loadStatus.produtos.done ? (loadStatus.produtos.ok ? '✅' : '⚠️') : '⏳'})`;
+      } else {
+        badge.className = "diag-status-pill offline";
+        badge.textContent = "⚠️ Modo offline / Cache";
+        const erros = [];
+        if (loadStatus.embalagens.err) erros.push(`Embalagens: ${loadStatus.embalagens.err}`);
+        if (loadStatus.categorias.err) erros.push(`Categorias: ${loadStatus.categorias.err}`);
+        if (loadStatus.produtos.err) erros.push(`Produtos: ${loadStatus.produtos.err}`);
+        text.innerHTML = `⚠️ Operando com dados locais — ${state.embalagens.length} emb, ${state.categorias.length} cat, ${state.produtos.length} prod`;
+        log.textContent = `Avisos de rede: ${erros.join(" | ") || "Falha pontual de conexão"}`;
       }
+    }
 
-      popularDropdownEmbalagens();
-      popularDropdownCategorias();
-      renderizarListasModais();
-      renderizarTabelaProdutos();
-      calcularPrecos();
+    // 7. Funções de Carregamento INDEPENDENTES (com try/catch/finally e fallback)
+    async function carregarEmbalagens() {
+      try {
+        let embs = await apiListarColecaoSimples("embalagens");
+        if (!embs || embs.length === 0) {
+          for (const item of DEFAULT_EMBALAGENS) {
+            try { await apiCriar("embalagens", item); } catch(e){}
+          }
+          embs = await apiListarColecaoSimples("embalagens");
+        }
+        if (embs && embs.length > 0) {
+          state.embalagens = embs;
+          salvarLocal("embalagens", embs);
+        }
+        loadStatus.embalagens = { done: true, ok: true, count: state.embalagens.length, err: null };
+      } catch (err) {
+        console.warn("Falha ao carregar embalagens do Firestore:", err.message);
+        const local = lerLocal("embalagens");
+        state.embalagens = (local && local.length > 0) ? local : [...DEFAULT_EMBALAGENS];
+        loadStatus.embalagens = { done: true, ok: false, count: state.embalagens.length, err: err.message };
+      } finally {
+        popularDropdownEmbalagens();
+        renderizarListasModais();
+        calcularPrecos();
+        atualizarStatusGeral();
+      }
+    }
+
+    async function carregarCategorias() {
+      try {
+        let cats = await apiListarColecaoSimples("categorias");
+        if (!cats || cats.length === 0) {
+          for (const item of DEFAULT_CATEGORIAS) {
+            try { await apiCriar("categorias", item); } catch(e){}
+          }
+          cats = await apiListarColecaoSimples("categorias");
+        }
+        if (cats && cats.length > 0) {
+          state.categorias = cats;
+          salvarLocal("categorias", cats);
+        }
+        loadStatus.categorias = { done: true, ok: true, count: state.categorias.length, err: null };
+      } catch (err) {
+        console.warn("Falha ao carregar categorias do Firestore:", err.message);
+        const local = lerLocal("categorias");
+        state.categorias = (local && local.length > 0) ? local : [...DEFAULT_CATEGORIAS];
+        loadStatus.categorias = { done: true, ok: false, count: state.categorias.length, err: err.message };
+      } finally {
+        popularDropdownCategorias();
+        renderizarListasModais();
+        calcularPrecos();
+        atualizarStatusGeral();
+      }
+    }
+
+    async function carregarProdutos() {
+      try {
+        const { produtos, error } = await apiListarProdutos();
+        if (produtos && produtos.length > 0) {
+          state.produtos = produtos;
+          salvarLocal("produtos", produtos);
+        } else {
+          const local = lerLocal("produtos");
+          if (local && local.length > 0) {
+            state.produtos = local;
+          }
+        }
+        loadStatus.produtos = { 
+          done: true, 
+          ok: !error, 
+          count: state.produtos.length, 
+          err: error ? error.message : null 
+        };
+      } catch (err) {
+        console.warn("Falha ao carregar produtos do Firestore:", err.message);
+        const local = lerLocal("produtos");
+        state.produtos = Array.isArray(local) ? local : [];
+        loadStatus.produtos = { done: true, ok: false, count: state.produtos.length, err: err.message };
+      } finally {
+        renderizarTabelaProdutos();
+        atualizarStatusGeral();
+      }
     }
 
     // 8. Renderização de Dropdowns
@@ -2574,7 +2687,7 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
           await apiCriar("embalagens", itemPayload);
         }
         // Recarregar dados do servidor
-        const reloaded = await apiListar("embalagens");
+        const reloaded = await apiListarColecaoSimples("embalagens");
         state.embalagens = reloaded;
         salvarLocal("embalagens", reloaded);
         atualizarPainelDiagnostico(true, `Conexão com Firebase: ✅ conectado — ${state.embalagens.length} embalagens`, "Item salvo com sucesso no Firestore.");
@@ -2610,7 +2723,7 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
 
       try {
         await apiExcluir("embalagens", id);
-        const reloaded = await apiListar("embalagens");
+        const reloaded = await apiListarColecaoSimples("embalagens");
         state.embalagens = reloaded;
         salvarLocal("embalagens", reloaded);
         atualizarPainelDiagnostico(true, `Conexão com Firebase: ✅ conectado — ${state.embalagens.length} embalagens`, "Exclusão confirmada na nuvem.");
@@ -2677,7 +2790,7 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
         } else {
           await apiCriar("categorias", itemPayload);
         }
-        const reloaded = await apiListar("categorias");
+        const reloaded = await apiListarColecaoSimples("categorias");
         state.categorias = reloaded;
         salvarLocal("categorias", reloaded);
         atualizarPainelDiagnostico(true, `Conexão com Firebase: ✅ conectado — ${state.categorias.length} categorias`, "Categoria salva na nuvem com sucesso.");
@@ -2712,7 +2825,7 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
 
       try {
         await apiExcluir("categorias", id);
-        const reloaded = await apiListar("categorias");
+        const reloaded = await apiListarColecaoSimples("categorias");
         state.categorias = reloaded;
         salvarLocal("categorias", reloaded);
         atualizarPainelDiagnostico(true, `Conexão com Firebase: ✅ conectado — ${state.categorias.length} categorias`, "Categoria excluída da nuvem.");
@@ -3024,10 +3137,12 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
           await apiCriar("produtos", produtoPayload);
         }
         // Recarregar do Firestore
-        const reloaded = await apiListar("produtos");
-        state.produtos = reloaded;
-        salvarLocal("produtos", reloaded);
-        atualizarPainelDiagnostico(true, `Conexão com Firebase: ✅ conectado — ${reloaded.length} produtos cadastrados`, "Produto salvo com sucesso no Firestore.");
+        const { produtos: reloaded } = await apiListarProdutos();
+        if (reloaded && reloaded.length > 0) {
+          state.produtos = reloaded;
+          salvarLocal("produtos", reloaded);
+        }
+        atualizarPainelDiagnostico(true, `Conexão com Firebase: ✅ conectado — ${state.produtos.length} produtos cadastrados`, "Produto salvo com sucesso no Firestore.");
 
         msgEl.style.color = "#15803d";
         msgEl.textContent = editId ? "✅ Produto atualizado com sucesso!" : "✅ Produto salvo com sucesso na coleção produtos!";
@@ -3062,16 +3177,22 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
 
       try {
         await apiExcluir("produtos", id);
-        const reloaded = await apiListar("produtos");
-        state.produtos = reloaded;
-        salvarLocal("produtos", reloaded);
-        atualizarPainelDiagnostico(true, `Conexão com Firebase: ✅ conectado — ${reloaded.length} produtos cadastrados`, "Exclusão do produto confirmada.");
+        const { produtos: reloaded } = await apiListarProdutos();
+        if (reloaded && reloaded.length > 0) {
+          state.produtos = reloaded;
+          salvarLocal("produtos", reloaded);
+        } else {
+          state.produtos = state.produtos.filter(p => p.id !== id);
+          salvarLocal("produtos", state.produtos);
+        }
+        atualizarPainelDiagnostico(true, `Conexão com Firebase: ✅ conectado — ${state.produtos.length} produtos cadastrados`, "Exclusão do produto confirmada.");
       } catch (err) {
         state.produtos = state.produtos.filter(p => p.id !== id);
         salvarLocal("produtos", state.produtos);
         atualizarPainelDiagnostico(false, `Excluído localmente (offline): ${err.message}`, "");
       }
 
+      state.selectedIds.delete(id);
       renderizarTabelaProdutos();
     }
 
@@ -3214,8 +3335,10 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
 
         // Recarregar dados atualizados
         try {
-          const reloaded = await apiListar("produtos");
-          state.produtos = reloaded;
+          const { produtos: reloaded } = await apiListarProdutos();
+          if (reloaded && reloaded.length > 0) {
+            state.produtos = reloaded;
+          }
         } catch(e) {}
         salvarLocal("produtos", state.produtos);
         renderizarTabelaProdutos();
@@ -3236,8 +3359,8 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
 
       try {
         // 1. Leitura
-        await apiListar("embalagens");
-        await apiListar("categorias");
+        await apiListarColecaoSimples("embalagens");
+        await apiListarColecaoSimples("categorias");
 
         // 2. Gravação de teste
         const testId = await apiCriar("teste", { ping: "ok" });
@@ -3258,7 +3381,23 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
 
     // 13. Inicialização e Delegação de Eventos
     document.addEventListener("DOMContentLoaded", () => {
+      // a) Popular IMEDIATAMENTE os dropdowns e a lista com os dados em memória/cache
+      // para a página NUNCA ficar vazia ou travada em "Carregando..."
+      const cachedEmbs = lerLocal("embalagens");
+      state.embalagens = (cachedEmbs && cachedEmbs.length > 0) ? cachedEmbs : [...DEFAULT_EMBALAGENS];
+
+      const cachedCats = lerLocal("categorias");
+      state.categorias = (cachedCats && cachedCats.length > 0) ? cachedCats : [...DEFAULT_CATEGORIAS];
+
+      const cachedProds = lerLocal("produtos");
+      state.produtos = Array.isArray(cachedProds) ? cachedProds : [];
+
       popularDropdownPeso();
+      popularDropdownEmbalagens();
+      popularDropdownCategorias();
+      renderizarListasModais();
+      renderizarTabelaProdutos();
+      calcularPrecos();
 
       // Listeners de inputs de cálculo em tempo real
       const formInputIds = [
@@ -3311,25 +3450,7 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
 
       document.getElementById("btnBaixarPlanilhaExemplo").addEventListener("click", baixarPlanilhaExemplo);
 
-      // Atualização de exclusão individual para também desmarcar do Set de selecionados
-    async function excluirProduto(id) {
-      if (!confirm("Confirma a exclusão deste produto cadastrado?")) return;
-
-      try {
-        await apiExcluir("produtos", id);
-        const reloaded = await apiListar("produtos");
-        state.produtos = reloaded;
-        salvarLocal("produtos", reloaded);
-        atualizarPainelDiagnostico(true, `Conexão com Firebase: ✅ conectado — ${reloaded.length} produtos cadastrados`, "Exclusão do produto confirmada.");
-      } catch (err) {
-        state.produtos = state.produtos.filter(p => p.id !== id);
-        salvarLocal("produtos", state.produtos);
-        atualizarPainelDiagnostico(false, `Excluído localmente (offline): ${err.message}`, "");
-      }
-
-      state.selectedIds.delete(id);
-      renderizarTabelaProdutos();
-    } (Edição, Exclusão e Seleção por Checkbox)
+      // Delegação de Eventos na Tabela de Produtos (Edição e Exclusão)
       document.getElementById("produtosTableBody").addEventListener("click", (e) => {
         const btnEdit = e.target.closest("[data-edit-prod]");
         if (btnEdit) {
@@ -3414,10 +3535,15 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
 
         // Recarregar lista completa do Firestore
         try {
-          const reloaded = await apiListar("produtos");
-          state.produtos = reloaded;
-          salvarLocal("produtos", reloaded);
-          atualizarPainelDiagnostico(true, `Conexão com Firebase: ✅ conectado — ${reloaded.length} produtos cadastrados`, "Exclusão em massa finalizada.");
+          const { produtos: reloaded } = await apiListarProdutos();
+          if (reloaded && reloaded.length > 0) {
+            state.produtos = reloaded;
+            salvarLocal("produtos", reloaded);
+          } else {
+            state.produtos = state.produtos.filter(p => !idsParaExcluir.includes(p.id));
+            salvarLocal("produtos", state.produtos);
+          }
+          atualizarPainelDiagnostico(true, `Conexão com Firebase: ✅ conectado — ${state.produtos.length} produtos cadastrados`, "Exclusão em massa finalizada.");
         } catch (err) {
           state.produtos = state.produtos.filter(p => !idsParaExcluir.includes(p.id));
           salvarLocal("produtos", state.produtos);
@@ -3498,8 +3624,11 @@ parse_Primary(n.content)}catch(l){}a="/EncryptionInfo";n=Qe.find(e,a);if(!n||!n.
         }
       });
 
-      // Carga inicial
-      carregarDadosIniciais();
+      // b) Carregamento em PARALELO e INDEPENDENTE das 3 coleções do Firestore
+      // Se qualquer uma falhar, as outras continuam sem bloquear e os dropdowns são limpos no finally
+      carregarEmbalagens();
+      carregarCategorias();
+      carregarProdutos();
     });
   </script>
 <script>
